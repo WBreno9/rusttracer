@@ -1,0 +1,16 @@
+[package]
+name = "rusttracer"
+version = "0.1.0"
+authors = ["William Cavalcante <williabreno9@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+nalgebra = "0.19"
+image = "0.22.3"
+rand = "0.7.2"
+cairo-rs = "0.7.1"
+glium = "0.25.1"
+lazy_static = "1.4.0"
+wavefront_obj = "7.0.0"
