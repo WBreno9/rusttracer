@@ -1,23 +1,50 @@
 extern crate image;
 
 extern crate nalgebra as na;
+use na::Point3;
 use na::Vector3;
 use na::Vector2;
 
 pub mod camera;
-use crate::camera::{Camera, PerspectiveCamera};
+use crate::camera::{PerspectiveCamera};
 
 mod brdf;
 use crate::brdf::{BRDFInput};
-
-mod ray;
-use crate::ray::*;
 
 pub mod object;
 use crate::object::*;
 
 pub mod primitive;
 use crate::primitive::*;
+
+extern crate obj;
+
+fn load_mesh_aggregate(path: &str) -> AggregatePrimitive<Triangle> {
+    use std::path::Path;
+    let obj_mesh = obj::Obj::<obj::SimplePolygon>::load(&Path::new(path))
+        .expect("Failed to load mesh");
+
+    assert!(obj_mesh.objects.len() == 1);
+    assert!(obj_mesh.objects[0].groups.len() == 1);
+
+    let mut aggregate = AggregatePrimitive::<Triangle>::new(); 
+    for poly in obj_mesh.objects[0].groups[0].polys.clone().into_iter() {
+        let mut vert = Vec::<Vertex>::new();
+
+        for obj::IndexTuple(pos_index, _, _) in poly {
+            let pos_v = obj_mesh.position[pos_index];
+            let pos = Vector3::<f32>::new(pos_v[0], pos_v[1], pos_v[2]);
+            vert.push(Vertex {
+                pos,
+            });
+        }
+
+        let triangle = Triangle::new(&vert);
+        aggregate.primitives.push(triangle);
+    }
+
+    aggregate
+}
 
 fn main() {
     let width = 800;
@@ -28,47 +55,15 @@ fn main() {
 
     let ratio = width as f32/height as f32;
 
-    let camera = PerspectiveCamera::new();
-
-    // let mut scene = Scene::new();
-
-    // scene.primitives.push(
-    //     Box::new(
-    //         Sphere::new(
-    //             Vector3::<f32>::new(0.0, 0.0, 2.0),
-    //             0.3
-    //             )
-    //         )
-    //     );
-
-    // scene.primitives.push(
-    //     Box::new(
-    //         Sphere::new(
-    //             Vector3::<f32>::new(0.0, 1.0, 2.0),
-    //             0.25
-    //             )
-    //         )
-    //     );
-
-    // scene.primitives.push(
-    //     Box::new(
-    //         TriangleObj::new(
-    //             vec![
-    //             Vertex { pos: Vector3::<f32>::new( 0.0,  1.0, 2.0) },
-    //             Vertex { pos: Vector3::<f32>::new( 1.0, -1.0, 2.0) },
-    //             Vertex { pos: Vector3::<f32>::new(-1.0, -1.0, 2.0) },
-    //             ].as_ref()
-    //             )
-    //         )
-    //     );
-
-    let scene = Object::<Triangle>::new(Triangle::new(
-        vec![
-        Vertex { pos: Vector3::<f32>::new( 0.0,  1.0, 2.0) },
-        Vertex { pos: Vector3::<f32>::new( 1.0, -1.0, 2.0) },
-        Vertex { pos: Vector3::<f32>::new(-1.0, -1.0, 2.0) },
-        ].as_ref())
+    let mut camera = PerspectiveCamera::new();
+    camera.isometry = na::geometry::Isometry3::look_at_lh(
+        &Vector3::repeat(0.7).into(),
+        &Point3::origin(),
+        &Vector3::y_axis(),
         );
+
+    let aggregate = load_mesh_aggregate("tests/bunny.obj");
+    let scene = Object::<AggregatePrimitive<Triangle>>::new(aggregate);
 
     for i in 0..im_width {
         for j in 0..im_height {
@@ -82,8 +77,10 @@ fn main() {
             let ray = camera.get_ray(screen_space);
 
             if let Some(record) = scene.intersect(&ray) {
+                let pos = ray.origin.coords + record.t*ray.direction;
+
                 let lp = Vector3::<f32>::new(3.0, 5.0, -1.5).normalize()*5.0;
-                let lv = lp - record.pos;
+                let lv = lp - pos;
                 let dist2 = lv.dot(&lv);
 
                 let attenuation = 25.0 / dist2;

@@ -1,16 +1,26 @@
 extern crate nalgebra as na;
 use na::Vector3;
 
-use crate::primitive::{IntersectPrimitive};
-use crate::ray::*;
+use crate::primitive;
+use crate::primitive::{Ray};
 use crate::brdf::*;
 
-pub struct Object<T: IntersectPrimitive> {
+pub struct IntersectionRecord<'a> {
+    pub t: f32,
+    pub normal: Vector3<f32>,
+    pub brdf: &'a Box<dyn BRDF>,
+}
+
+pub trait Intersect {
+    fn intersect(&self, ray: &Ray) -> Option<IntersectionRecord>;
+}
+
+pub struct Object<T: primitive::Primitive> {
     primitive: T,
     brdf: Box<dyn BRDF>,
 }
 
-impl<T: IntersectPrimitive> Object<T> {
+impl<T: primitive::Primitive> Object<T> {
     pub fn new(primitive: T) -> Object<T> {
         Object {
             primitive,
@@ -23,12 +33,11 @@ impl<T: IntersectPrimitive> Object<T> {
     }
 }
 
-impl<T: IntersectPrimitive> Intersect for Object<T> {
+impl<T: primitive::Primitive> Intersect for Object<T> {
     fn intersect(&self, ray: &Ray) -> Option<IntersectionRecord> {
         if let Some(intersect_prim) = self.primitive.intersect(&ray) {
             Some(IntersectionRecord {
                 t: intersect_prim.t,
-                pos: intersect_prim.pos,
                 normal: intersect_prim.normal,
                 brdf: &self.brdf,
             })

@@ -1,23 +1,26 @@
 extern crate nalgebra as na;
+use na::Point3;
 use na::Vector3;
 
-use crate::ray::*;
+pub struct Ray {
+    pub origin: Point3<f32>,
+    pub direction: Vector3<f32>,
+}
 
-pub struct IntersectionPrimitive {
+pub struct IntersectionRecord {
     pub t: f32,
-    pub pos: Vector3<f32>,
     pub normal: Vector3<f32>,
 }
 
-pub trait IntersectPrimitive {
-    fn intersect(&self, ray: &Ray) -> Option<IntersectionPrimitive>;
+pub trait Primitive {
+    fn intersect(&self, ray: &Ray) -> Option<IntersectionRecord>;
 }
 
-pub struct AggregatePrimitive<T: IntersectPrimitive> {
+pub struct AggregatePrimitive<T: Primitive> {
     pub primitives: Vec<T>,
 }
 
-impl<T: IntersectPrimitive> AggregatePrimitive<T> {
+impl<T: Primitive> AggregatePrimitive<T> {
     pub fn new() -> AggregatePrimitive<T> {
         AggregatePrimitive::<T> {
             primitives: Vec::<T>::new(),
@@ -25,9 +28,9 @@ impl<T: IntersectPrimitive> AggregatePrimitive<T> {
     }
 }
 
-impl<T: IntersectPrimitive> IntersectPrimitive for AggregatePrimitive<T> {
-    fn intersect(&self, ray: &Ray) -> Option<IntersectionPrimitive> {
-        let mut closest: Option<IntersectionPrimitive> = None;
+impl<T: Primitive> Primitive for AggregatePrimitive<T> {
+    fn intersect(&self, ray: &Ray) -> Option<IntersectionRecord> {
+        let mut closest: Option<IntersectionRecord> = None;
 
         for primitive in self.primitives.iter() {
             if let Some(record) = primitive.intersect(&ray) {
@@ -44,12 +47,12 @@ impl<T: IntersectPrimitive> IntersectPrimitive for AggregatePrimitive<T> {
 }
 
 pub struct Sphere {
-    pub pos: Vector3<f32>,
+    pub pos: Point3<f32>,
     pub radius: f32,
 }
 
 impl Sphere {
-    pub fn new(pos: Vector3<f32>, radius: f32) -> Sphere {
+    pub fn new(pos: Point3<f32>, radius: f32) -> Sphere {
         Sphere {
             pos, 
             radius,
@@ -57,8 +60,8 @@ impl Sphere {
     }
 }
 
-impl IntersectPrimitive for Sphere {
-    fn intersect(&self, ray: &Ray) -> Option<IntersectionPrimitive> {
+impl Primitive for Sphere {
+    fn intersect(&self, ray: &Ray) -> Option<IntersectionRecord> {
         let l = self.pos - ray.origin;
         let tca = l.dot(&ray.direction);
         let d2 = l.dot(&l) - tca*tca;
@@ -74,12 +77,10 @@ impl IntersectPrimitive for Sphere {
         if d2 > radius2 || t < 0.0 {
             None
         } else {
-            let pos = ray.origin + t*ray.direction;
-            let normal = (pos - self.pos).normalize();
-
-            Some(IntersectionPrimitive {
+            let pos = ray.origin.coords + t*ray.direction;
+            let normal = (pos - self.pos.coords).normalize();
+            Some(IntersectionRecord {
                 t,
-                pos,
                 normal,
             })
         }
@@ -107,9 +108,9 @@ impl Triangle {
     }
 }
 
-impl IntersectPrimitive for Triangle {
-    fn intersect(&self, ray: &Ray) -> Option<IntersectionPrimitive> {
-        let oa = ray.origin - self.vert[0].pos;
+impl Primitive for Triangle {
+    fn intersect(&self, ray: &Ray) -> Option<IntersectionRecord> {
+        let oa = ray.origin.coords - self.vert[0].pos;
         let e1 = self.vert[1].pos - self.vert[0].pos;
         let e2 = self.vert[2].pos - self.vert[0].pos;
 
@@ -126,9 +127,8 @@ impl IntersectPrimitive for Triangle {
             None
         } else {
             let normal = e1.cross(&e2).normalize();
-            Some(IntersectionPrimitive {
+            Some(IntersectionRecord {
                 t,
-                pos: ray.direction + t*ray.origin,
                 normal,
             })
         }
