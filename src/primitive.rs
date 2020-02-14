@@ -2,10 +2,7 @@ extern crate nalgebra as na;
 use na::Point3;
 use na::Vector3;
 
-pub struct Ray {
-    pub origin: Point3<f32>,
-    pub direction: Vector3<f32>,
-}
+use crate::ray::Ray;
 
 pub struct IntersectionRecord {
     pub t: f32,
@@ -90,7 +87,7 @@ impl Primitive for Sphere {
 #[derive(Debug, Clone, Copy)]
 pub struct Vertex {
     pub pos: Vector3<f32>,
-    // pub nrm: Vector3<f32>,
+    pub nrm: Vector3<f32>,
     // pub tcd: Vector3<f32>,
 }
 
@@ -126,7 +123,14 @@ impl Primitive for Triangle {
         if u < 0.0 || u > 1.0 || v < 0.0 || u + v > 1.0 {
             None
         } else {
-            let normal = e1.cross(&e2).normalize();
+            // let normal = e1.cross(&e2).normalize();
+            let w = 1.0 - u - v;
+
+            let normal = (w * self.vert[0].nrm + 
+                u * self.vert[1].nrm +
+                v * self.vert[2].nrm).normalize();
+
+
             Some(IntersectionRecord {
                 t,
                 normal,

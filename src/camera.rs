@@ -1,9 +1,8 @@
 extern crate nalgebra as na;
-use na::Vector3;
-use na::Vector2;
+use na::{Vector3, Vector2};
 use na::geometry::{Isometry3, Point3};
 
-use crate::primitive::{Ray};
+use crate::ray::Ray;
 
 pub struct PerspectiveCamera {
     pub isometry: Isometry3<f32>,

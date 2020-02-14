@@ -2,7 +2,7 @@ extern crate nalgebra as na;
 use na::Vector3;
 
 use crate::primitive;
-use crate::primitive::{Ray};
+use crate::ray::Ray;
 use crate::brdf::*;
 
 pub struct IntersectionRecord<'a> {

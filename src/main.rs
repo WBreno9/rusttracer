@@ -17,34 +17,11 @@ use crate::object::*;
 pub mod primitive;
 use crate::primitive::*;
 
+pub mod ray;
+
 extern crate obj;
 
-fn load_mesh_aggregate(path: &str) -> AggregatePrimitive<Triangle> {
-    use std::path::Path;
-    let obj_mesh = obj::Obj::<obj::SimplePolygon>::load(&Path::new(path))
-        .expect("Failed to load mesh");
-
-    assert!(obj_mesh.objects.len() == 1);
-    assert!(obj_mesh.objects[0].groups.len() == 1);
-
-    let mut aggregate = AggregatePrimitive::<Triangle>::new(); 
-    for poly in obj_mesh.objects[0].groups[0].polys.clone().into_iter() {
-        let mut vert = Vec::<Vertex>::new();
-
-        for obj::IndexTuple(pos_index, _, _) in poly {
-            let pos_v = obj_mesh.position[pos_index];
-            let pos = Vector3::<f32>::new(pos_v[0], pos_v[1], pos_v[2]);
-            vert.push(Vertex {
-                pos,
-            });
-        }
-
-        let triangle = Triangle::new(&vert);
-        aggregate.primitives.push(triangle);
-    }
-
-    aggregate
-}
+pub mod mesh;
 
 fn main() {
     let width = 800;
@@ -62,8 +39,14 @@ fn main() {
         &Vector3::y_axis(),
         );
 
-    let aggregate = load_mesh_aggregate("tests/bunny.obj");
-    let scene = Object::<AggregatePrimitive<Triangle>>::new(aggregate);
+    let aggregate = mesh::load_mesh_aggregate("tests/bunny.obj").unwrap();
+    let mut scene = Object::<AggregatePrimitive<Triangle>>::new(aggregate);
+    scene.brdf = Box::new(MicrofacetBRDF {
+        albedo: Vector3::<f32>::new(1.0, 1.0, 1.0),
+        f0: Vector3::<f32>::new(1.0, 1.0, 1.0),
+        roughness: 1.0, 
+        specular: 0.5,
+    });
 
     for i in 0..im_width {
         for j in 0..im_height {
