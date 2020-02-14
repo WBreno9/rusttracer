@@ -16,8 +16,8 @@ pub trait Intersect {
 }
 
 pub struct Object<T: primitive::Primitive> {
-    primitive: T,
-    brdf: Box<dyn BRDF>,
+    pub primitive: T,
+    pub brdf: Box<dyn BRDF>,
 }
 
 impl<T: primitive::Primitive> Object<T> {

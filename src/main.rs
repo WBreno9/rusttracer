@@ -9,7 +9,7 @@ pub mod camera;
 use crate::camera::{PerspectiveCamera};
 
 mod brdf;
-use crate::brdf::{BRDFInput};
+use crate::brdf::{BRDFInput, MicrofacetBRDF};
 
 pub mod object;
 use crate::object::*;
