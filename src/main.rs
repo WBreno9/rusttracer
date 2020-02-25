@@ -56,7 +56,7 @@ fn radiance(ray: &Ray, scene: &dyn object::Intersect) -> Vector3<f32> {
     if let Some(record) = scene.intersect(&ray) {
         let (m, p, d, n) = init_vectors(&ray, &record);
 
-        let lp = m * Point3::<f32>::new(0.0, 1.8, 0.0);
+        let lp = m * Point3::new(0.0, 1.8, 0.0);
         let lv = lp - p;
         let dist2 = lv.dot(&lv);
 
@@ -70,7 +70,7 @@ fn radiance(ray: &Ray, scene: &dyn object::Intersect) -> Vector3<f32> {
 
         record.brdf.f(&input) * attenuation
     } else {
-        Vector3::<f32>::new(0.0, 0.0, 0.0)
+        Vector3::repeat(0.0)
     }
 }
 
