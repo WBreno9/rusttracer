@@ -42,6 +42,7 @@ pub struct BRDFInput<'a> {
     pub v: &'a Vector3<f32>,
 }
 
+#[derive(Clone)]
 pub struct MicrofacetBRDF {
     pub albedo: Vector3<f32>,
     pub f0: Vector3<f32>,
