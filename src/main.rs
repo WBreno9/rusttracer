@@ -49,10 +49,18 @@ fn init_vectors(ray: &Ray, record: &object::IntersectionRecord) ->
         let d = m * -ray.direction;
         let n = m * record.normal;
 
-        (m, p.into(), d, n)
+        (m, p, d, n)
 }
 
-fn radiance(ray: &Ray, scene: &dyn object::Intersect) -> Vector3<f32> {
+fn reflect_onb(v: &Vector3<f32>) -> Vector3<f32> {
+    Vector3::new(-v.x, -v.y, v.z)
+}
+
+fn radiance(depth: i32, ray: &Ray, scene: &dyn object::Intersect) -> Vector3<f32> {
+    if depth >= 2 {
+        return Vector3::repeat(0.0);
+    }
+
     if let Some(record) = scene.intersect(&ray) {
         let (m, p, d, n) = init_vectors(&ray, &record);
 
@@ -68,7 +76,13 @@ fn radiance(ray: &Ray, scene: &dyn object::Intersect) -> Vector3<f32> {
             v: &d,
         };
 
-        record.brdf.f(&input) * attenuation
+        let rlf_ray = Ray {
+            origin: m.inverse_transform_point(&p),
+            direction: m.inverse_transform_vector(&reflect_onb(&d)),
+        };
+
+        record.brdf.f(&input) * attenuation +
+            radiance(depth + 1, &rlf_ray, scene) * 0.33
     } else {
         Vector3::repeat(0.0)
     }
@@ -112,7 +126,7 @@ fn main() {
 
             let ray = camera.get_ray(screen_space);
 
-            let c = radiance(&ray, &scene);
+            let c = radiance(0, &ray, &scene);
 
             pixel[0] = (c[0].min(1.0) * 255.0) as u8;
             pixel[1] = (c[1].min(1.0) * 255.0) as u8;
