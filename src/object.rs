@@ -1,13 +1,13 @@
 extern crate nalgebra as na;
 use na::Vector3;
 
+use crate::brdf::*;
 use crate::primitive;
 use crate::ray::Ray;
-use crate::brdf::*;
 
 pub struct IntersectionRecord<'a> {
-    pub t: f32,
-    pub normal: Vector3<f32>,
+    pub t: f64,
+    pub normal: Vector3<f64>,
     pub brdf: &'a Box<dyn BRDF>,
 }
 
@@ -25,11 +25,12 @@ impl<T: primitive::Primitive> Object<T> {
         Object {
             primitive,
             brdf: Box::new(MicrofacetBRDF::new(
-                    Vector3::<f32>::new(0.9, 0.3, 0.2),
-                    Vector3::<f32>::new(0.58, 0.58, 0.58),
-                    0.27,
-                    0.8,
-                    ))}
+                Vector3::<f64>::new(0.9, 0.3, 0.2),
+                Vector3::<f64>::new(0.58, 0.58, 0.58),
+                0.27,
+                0.8,
+            )),
+        }
     }
 }
 

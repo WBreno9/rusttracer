@@ -5,8 +5,8 @@ use na::Vector3;
 use crate::ray::Ray;
 
 pub struct IntersectionRecord {
-    pub t: f32,
-    pub normal: Vector3<f32>,
+    pub t: f64,
+    pub normal: Vector3<f64>,
 }
 
 pub trait Primitive {
@@ -44,16 +44,13 @@ impl<T: Primitive> Primitive for AggregatePrimitive<T> {
 }
 
 pub struct Sphere {
-    pub pos: Point3<f32>,
-    pub radius: f32,
+    pub pos: Point3<f64>,
+    pub radius: f64,
 }
 
 impl Sphere {
-    pub fn new(pos: Point3<f32>, radius: f32) -> Sphere {
-        Sphere {
-            pos, 
-            radius,
-        }
+    pub fn new(pos: Point3<f64>, radius: f64) -> Sphere {
+        Sphere { pos, radius }
     }
 }
 
@@ -61,34 +58,42 @@ impl Primitive for Sphere {
     fn intersect(&self, ray: &Ray) -> Option<IntersectionRecord> {
         let l = self.pos - ray.origin;
         let tca = l.dot(&ray.direction);
-        let d2 = l.dot(&l) - tca*tca;
+        let d2 = l.dot(&l) - tca * tca;
 
-        let radius2 = self.radius*self.radius;
+        let radius2 = self.radius * self.radius;
 
         let thc = (radius2 - d2).sqrt();
-        let mut t = tca - thc;
+
+        let t0 = tca - thc;
         let t1 = tca + thc;
 
-        t = t.min(t1);
+        let mut t = t1.min(t0);
 
-        if d2 > radius2 || t < 0.0 {
+        if t0 < std::f32::EPSILON.into() && t1 > std::f32::EPSILON.into() {
+            t = t1;
+
+            let pos = ray.origin.coords + t * ray.direction;
+            let normal = (self.pos.coords - pos).normalize();
+
+            return Some(IntersectionRecord { t, normal });
+        }
+
+        if d2 > radius2 || t < std::f32::EPSILON.into() {
             None
         } else {
-            let pos = ray.origin.coords + t*ray.direction;
+            let pos = ray.origin.coords + t * ray.direction;
             let normal = (pos - self.pos.coords).normalize();
-            Some(IntersectionRecord {
-                t,
-                normal,
-            })
+
+            Some(IntersectionRecord { t, normal })
         }
     }
 }
 
 #[derive(Debug, Clone, Copy)]
 pub struct Vertex {
-    pub pos: Vector3<f32>,
-    pub nrm: Vector3<f32>,
-    // pub tcd: Vector3<f32>,
+    pub pos: Vector3<f64>,
+    pub nrm: Vector3<f64>,
+    // pub tcd: Vector3<f64>,
 }
 
 pub struct Triangle {
@@ -99,9 +104,7 @@ impl Triangle {
     pub fn new(v: &Vec<Vertex>) -> Triangle {
         debug_assert!(v.len() == 3);
 
-        Triangle {
-            vert: v.clone(),
-        }
+        Triangle { vert: v.clone() }
     }
 }
 
@@ -126,15 +129,10 @@ impl Primitive for Triangle {
             // let normal = e1.cross(&e2).normalize();
             let w = 1.0 - u - v;
 
-            let normal = (w * self.vert[0].nrm + 
-                u * self.vert[1].nrm +
-                v * self.vert[2].nrm).normalize();
+            let normal =
+                (w * self.vert[0].nrm + u * self.vert[1].nrm + v * self.vert[2].nrm).normalize();
 
-
-            Some(IntersectionRecord {
-                t,
-                normal,
-            })
+            Some(IntersectionRecord { t, normal })
         }
     }
 }
