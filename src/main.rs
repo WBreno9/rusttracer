@@ -9,7 +9,7 @@ pub mod camera;
 use crate::camera::PerspectiveCamera;
 
 mod brdf;
-use crate::brdf::{BRDFInput, DiffuseBRDF, MicrofacetBRDF,  EmissiveBRDF};
+use crate::brdf::{BRDFInput, DiffuseBRDF, MicrofacetBRDF};
 
 pub mod object;
 use crate::object::*;
@@ -32,13 +32,17 @@ extern crate lazy_static;
 
 pub mod sample;
 
+pub mod light;
+
+use crate::light::*;
+
 fn radiance(depth: i32, ray: &Ray, scene: &dyn object::Intersect) -> Vector3<f64> {
     if depth >= 3 {
         return Vector3::repeat(0.0);
     }
 
     if let Some(record) = scene.intersect(&ray) {
-        let (m, _, v, n, o) = sample::init_vectors(&ray, &record);
+        let (m, p, v, n, o) = sample::init_vectors(&ray, &record);
 
         let (l, pdf) = record.brdf.p();
 
@@ -47,8 +51,15 @@ fn radiance(depth: i32, ray: &Ray, scene: &dyn object::Intersect) -> Vector3<f64
         let f = record.brdf.f(&BRDFInput::new(&n, &l, &v));
         let e = record.brdf.e();
 
+        let light = light::PointLight {
+            pos: Point3::<f64>::new(0.0, 1.7, 0.0),
+            color:  Vector3::<f64>::new(1.0, 1.0, 1.0),
+            power: 3.0,
+        };
+
         e + (f * pdf).component_mul(&radiance(depth + 1, &r, scene))
             * n.dot(&l)
+            + light.sample(&m, &n, &v, &p, &record.brdf)
     } else {
         Vector3::repeat(0.0)
     }
@@ -78,7 +89,7 @@ fn main() {
     ball.brdf = Box::new(MicrofacetBRDF {
         albedo: Vector3::<f64>::new(0.0, 0.5, 0.5),
         f0: Vector3::<f64>::repeat(0.8),
-        roughness: 0.2,
+        roughness: 0.6,
         specular: 0.5
     });
 
@@ -92,7 +103,7 @@ fn main() {
 
             let mut c = Vector3::<f64>::repeat(0.0);
 
-            let spp = 2000;
+            let spp = 1000;
             for _ in 0..spp {
                 c += radiance(0, &ray, &scene);
             }
@@ -152,21 +163,21 @@ fn cornell_box(box_size: f64) -> AggregateObject {
         color: Vector3::<f64>::new(1.0, 0.0, 0.0),
     });
 
-    let mut light = Object::new(Sphere::new(
-        Point3::new(0.0, box_size, 0.0),
-        0.5,
-        ));
-    light.brdf = Box::new(EmissiveBRDF::new(
-        Vector3::<f64>::new(1.0, 1.0, 1.0),
-        22.0,
-    ));
+    // let mut light = Object::new(Sphere::new(
+    //     Point3::new(0.0, box_size, 0.0),
+    //     0.5,
+    //     ));
+    // light.brdf = Box::new(EmissiveBRDF::new(
+    //     Vector3::<f64>::new(1.0, 1.0, 1.0),
+    //     22.0,
+    // ));
 
     scene.primitives.push(Box::new(floor));
     scene.primitives.push(Box::new(ceiling));
     scene.primitives.push(Box::new(back_wall));
     scene.primitives.push(Box::new(left_wall));
     scene.primitives.push(Box::new(right_wall));
-    scene.primitives.push(Box::new(light));
+    // scene.primitives.push(Box::new(light));
 
     scene
 }

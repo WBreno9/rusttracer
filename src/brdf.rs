@@ -65,18 +65,6 @@ pub struct EmissiveBRDF {
     pub power: f64,
 }
 
-impl EmissiveBRDF {
-    pub fn new(
-        color: Vector3<f64>,
-        power: f64,
-    ) -> EmissiveBRDF {
-        EmissiveBRDF {
-            color: color.normalize(),
-            power,
-        }
-    }
-}
-
 impl BRDF for EmissiveBRDF {
     fn f(&self, _: &BRDFInput) -> Vector3<f64> {
         Vector3::zeros()
