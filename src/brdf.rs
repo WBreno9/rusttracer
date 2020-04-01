@@ -1,6 +1,8 @@
 extern crate nalgebra as na;
 use na::Vector3;
 
+use crate::sample;
+
 use std::f64::consts::PI;
 
 fn ggx_chi(a: f64) -> f64 {
@@ -47,6 +49,16 @@ pub struct BRDFInput<'a> {
     pub v: &'a Vector3<f64>,
 }
 
+impl<'a> BRDFInput<'a> {
+    pub fn new(n: &'a Vector3<f64>, 
+        l: &'a Vector3<f64>, 
+        v: &'a Vector3<f64>) -> BRDFInput<'a> {
+        BRDFInput {
+            n, l, v
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct EmissiveBRDF {
     pub color: Vector3<f64>,
@@ -82,22 +94,14 @@ pub struct DiffuseBRDF {
     pub color: Vector3<f64>,
 }
 
+
 impl BRDF for DiffuseBRDF {
     fn f(&self, _: &BRDFInput) -> Vector3<f64> {
         self.color
     }
 
     fn p(&self) -> (Vector3<f64>, f64) {
-        use rand::random;
-
-        let sample = Vector3::<f64>::new(
-            (random::<f64>() * 2.0) - 1.0,
-            (random::<f64>() * 2.0) - 1.0,
-            random(),
-        )
-        .normalize();
-
-        (sample, 1.0 / 2.0*std::f64::consts::PI)
+        (sample::uniform_hemisphere(), 1.0 / 2.0*PI)
     }
 
     fn e(&self) -> Vector3<f64> {
@@ -144,19 +148,11 @@ impl BRDF for MicrofacetBRDF {
 
         let d = input.n.dot(&input.l).max(0.0).min(1.0);
 
-        // (self.albedo * d) + (s * self.specular)
-        (self.albedo * d)
+        (self.albedo * d) + (s * self.specular)
     }
 
     fn p(&self) -> (Vector3<f64>, f64) {
-        let sample = Vector3::<f64>::new(
-            (rand::random::<f64>() * 2.0) - 1.0,
-            rand::random(),
-            rand::random(),
-        )
-        .normalize();
-
-        (sample, 1.0 / 2.0*std::f64::consts::PI)
+        (sample::uniform_hemisphere(), 1.0 / 2.0*std::f64::consts::PI)
     }
 
     fn e(&self) -> Vector3<f64> {

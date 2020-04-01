@@ -89,6 +89,26 @@ impl Primitive for Sphere {
     }
 }
 
+pub struct Plane {
+    pub pos: Point3<f64>,
+    pub nrm: Vector3<f64>,
+}
+
+impl Primitive for Plane {
+    fn intersect(&self, ray: &Ray) -> Option<IntersectionRecord> {
+        let denom = (-self.nrm).dot(&ray.direction);
+        if denom > 1e-6 {
+            let v = self.pos - ray.origin;
+            let t = v.dot(&-self.nrm) / denom;
+
+            if t >= 0.0 {
+                return Some(IntersectionRecord { t, normal: self.nrm });
+            }
+        }
+        None
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct Vertex {
     pub pos: Vector3<f64>,
