@@ -26,7 +26,13 @@ pub fn onb(origin: &Point3<f64>, z: &Vector3<f64>) -> Isometry3<f64> {
 pub fn init_vectors(
     ray: &Ray,
     record: &object::IntersectionRecord,
-) -> (Isometry3<f64>, Point3<f64>, Vector3<f64>, Vector3<f64>, Point3<f64>) {
+) -> (
+    Isometry3<f64>,
+    Point3<f64>,
+    Vector3<f64>,
+    Vector3<f64>,
+    Point3<f64>,
+) {
     let o: Point3<f64> = (ray.origin.coords + record.t * ray.direction).into();
     let m = onb(&o, &record.normal);
 
@@ -47,16 +53,12 @@ pub fn uniform_hemisphere() -> Vector3<f64> {
     let theta = random::<f64>() * PI * 2.0;
     let phi = (1.0 - 1.0 * random::<f64>()).acos();
 
-    Vector3::<f64>::new(
-        phi.sin()*theta.cos(),
-        phi.sin()*theta.sin(),
-        phi.cos(),
-    ).normalize()
+    Vector3::<f64>::new(phi.sin() * theta.cos(), phi.sin() * theta.sin(), phi.cos()).normalize()
 }
 
 pub fn sample_ray(m: &Isometry3<f64>, o: &Point3<f64>, l: &Vector3<f64>) -> Ray {
     Ray {
         origin: *o,
-        direction: m.inverse_transform_vector(l)
+        direction: m.inverse_transform_vector(l),
     }
 }

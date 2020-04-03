@@ -102,7 +102,10 @@ impl Primitive for Plane {
             let t = v.dot(&-self.nrm) / denom;
 
             if t >= 0.0 {
-                return Some(IntersectionRecord { t, normal: self.nrm });
+                return Some(IntersectionRecord {
+                    t,
+                    normal: self.nrm,
+                });
             }
         }
         None

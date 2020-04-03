@@ -51,22 +51,38 @@ fn radiance(depth: i32, ray: &Ray, scene: &dyn object::Intersect) -> Vector3<f64
         let f = record.brdf.f(&BRDFInput::new(&n, &l, &v));
         let e = record.brdf.e();
 
-        let light = light::PointLight {
+        let light = light::DiskLight {
             pos: Point3::<f64>::new(0.0, 1.7, 0.0),
-            color:  Vector3::<f64>::new(1.0, 1.0, 1.0),
-            power: 3.0,
+            color: Vector3::<f64>::new(1.0, 1.0, 1.0),
+            power: 2.0,
+            radius: 0.2,
+            normal: Vector3::<f64>::new(0.0, -1.0, 0.0)
         };
 
-        e + (f * pdf).component_mul(&radiance(depth + 1, &r, scene))
-            * n.dot(&l)
-            + light.sample(&m, &n, &v, &p, &record.brdf)
+        let mut lc: f64 = 0.0;
+
+        let lp = light.sample_point(&m);
+
+        let sr = Ray {
+            origin: o,
+            direction: (lp - o).normalize()
+        };
+
+        if let Some(srecord) = scene.intersect(&sr) {
+            if srecord.t > (lp - o).norm() {
+                lc = 1.0;
+            }
+        }
+
+        e + (f * pdf).component_mul(&radiance(depth + 1, &r, scene)) * n.dot(&l)
+        //    + light.sample(&m, &n, &v, &p, &record.brdf)
     } else {
         Vector3::repeat(0.0)
     }
 }
 
 fn main() {
-    let width = 256;
+    let width = 128;
     let height = width;
 
     let mut im = image::RgbImage::new(width, height);
@@ -74,7 +90,7 @@ fn main() {
 
     let mut camera = PerspectiveCamera::new(Vector2::<u32>::new(width, height));
     camera.isometry = na::geometry::Isometry3::look_at_lh(
-        &Vector3::new(0.5, 0.6, 2.7).into(),
+        &Vector3::new(0.0, 0.0, 2.7).into(),
         &Point3::origin(),
         &Vector3::y_axis(),
     );
@@ -83,14 +99,14 @@ fn main() {
     let mut scene = cornell_box(box_size);
 
     let mut ball = Object::new(Sphere::new(
-        Point3::new(-0.55, -box_size + 0.6, -box_size + 0.5),
-        0.6,
+        Point3::new(0.0, -box_size + 1.1, -box_size + 0.7),
+        1.1,
     ));
     ball.brdf = Box::new(MicrofacetBRDF {
         albedo: Vector3::<f64>::new(0.0, 0.5, 0.5),
         f0: Vector3::<f64>::repeat(0.8),
         roughness: 0.6,
-        specular: 0.5
+        specular: 0.5,
     });
 
     scene.primitives.push(Box::new(ball));
@@ -103,7 +119,7 @@ fn main() {
 
             let mut c = Vector3::<f64>::repeat(0.0);
 
-            let spp = 1000;
+            let spp = 100;
             for _ in 0..spp {
                 c += radiance(0, &ray, &scene);
             }
@@ -125,31 +141,31 @@ fn main() {
 fn cornell_box(box_size: f64) -> AggregateObject {
     let mut scene = AggregateObject::new();
 
-    let ceiling_floor_brdf = Box::new(DiffuseBRDF{
+    let ceiling_floor_brdf = Box::new(DiffuseBRDF {
         color: Vector3::<f64>::new(1.0, 1.0, 1.0),
     });
 
     let mut floor = Object::new(Plane {
         pos: Point3::new(0.0, -box_size, 0.0),
-        nrm: Vector3::new(0.0, 1.0, 0.0)
+        nrm: Vector3::new(0.0, 1.0, 0.0),
     });
     floor.brdf = ceiling_floor_brdf.clone();
 
     let mut ceiling = Object::new(Plane {
         pos: Point3::new(0.0, box_size, 0.0),
-        nrm: Vector3::new(0.0, -1.0, 0.0)
+        nrm: Vector3::new(0.0, -1.0, 0.0),
     });
     ceiling.brdf = ceiling_floor_brdf.clone();
 
     let mut back_wall = Object::new(Plane {
         pos: Point3::new(0.0, 0.0, -box_size),
-        nrm: Vector3::new(0.0, 0.0, 1.0)
+        nrm: Vector3::new(0.0, 0.0, 1.0),
     });
     back_wall.brdf = ceiling_floor_brdf.clone();
 
     let mut left_wall = Object::new(Plane {
         pos: Point3::new(box_size, 0.0, 0.0),
-        nrm: Vector3::new(-1.0, 0.0, 0.0)
+        nrm: Vector3::new(-1.0, 0.0, 0.0),
     });
     left_wall.brdf = Box::new(DiffuseBRDF {
         color: Vector3::<f64>::new(0.0, 1.0, 0.0),
@@ -157,7 +173,7 @@ fn cornell_box(box_size: f64) -> AggregateObject {
 
     let mut right_wall = Object::new(Plane {
         pos: Point3::new(-box_size, 0.0, 0.0),
-        nrm: Vector3::new(1.0, 0.0, 0.0)
+        nrm: Vector3::new(1.0, 0.0, 0.0),
     });
     right_wall.brdf = Box::new(DiffuseBRDF {
         color: Vector3::<f64>::new(1.0, 0.0, 0.0),

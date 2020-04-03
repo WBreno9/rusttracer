@@ -50,12 +50,8 @@ pub struct BRDFInput<'a> {
 }
 
 impl<'a> BRDFInput<'a> {
-    pub fn new(n: &'a Vector3<f64>, 
-        l: &'a Vector3<f64>, 
-        v: &'a Vector3<f64>) -> BRDFInput<'a> {
-        BRDFInput {
-            n, l, v
-        }
+    pub fn new(n: &'a Vector3<f64>, l: &'a Vector3<f64>, v: &'a Vector3<f64>) -> BRDFInput<'a> {
+        BRDFInput { n, l, v }
     }
 }
 
@@ -82,14 +78,13 @@ pub struct DiffuseBRDF {
     pub color: Vector3<f64>,
 }
 
-
 impl BRDF for DiffuseBRDF {
     fn f(&self, _: &BRDFInput) -> Vector3<f64> {
         self.color
     }
 
     fn p(&self) -> (Vector3<f64>, f64) {
-        (sample::uniform_hemisphere(), 1.0 / 2.0*PI)
+        (sample::uniform_hemisphere(), 1.0 / 2.0 * PI)
     }
 
     fn e(&self) -> Vector3<f64> {
@@ -140,7 +135,10 @@ impl BRDF for MicrofacetBRDF {
     }
 
     fn p(&self) -> (Vector3<f64>, f64) {
-        (sample::uniform_hemisphere(), 1.0 / 2.0*std::f64::consts::PI)
+        (
+            sample::uniform_hemisphere(),
+            1.0 / 2.0 * std::f64::consts::PI,
+        )
     }
 
     fn e(&self) -> Vector3<f64> {
