@@ -37,7 +37,7 @@ pub mod light;
 use crate::light::*;
 
 fn radiance(depth: i32, ray: &Ray, scene: &dyn object::Intersect) -> Vector3<f64> {
-    if depth >= 3 {
+    if depth >= 2 {
         return Vector3::repeat(0.0);
     }
 
@@ -52,16 +52,16 @@ fn radiance(depth: i32, ray: &Ray, scene: &dyn object::Intersect) -> Vector3<f64
         let e = record.brdf.e();
 
         let light = light::DiskLight {
-            pos: Point3::<f64>::new(0.0, 1.7, 0.0),
+            pos: Point3::<f64>::new(0.0, 1.6, 0.0),
             color: Vector3::<f64>::new(1.0, 1.0, 1.0),
-            power: 2.0,
-            radius: 0.2,
+            power: 1.0,
+            radius: 0.6,
             normal: Vector3::<f64>::new(0.0, -1.0, 0.0)
         };
 
         let mut lc: f64 = 0.0;
 
-        let lp = light.sample_point(&m);
+        let lp = light.sample_point();
 
         let sr = Ray {
             origin: o,
@@ -75,14 +75,14 @@ fn radiance(depth: i32, ray: &Ray, scene: &dyn object::Intersect) -> Vector3<f64
         }
 
         e + (f * pdf).component_mul(&radiance(depth + 1, &r, scene)) * n.dot(&l)
-        //    + light.sample(&m, &n, &v, &p, &record.brdf)
+          +  light.shade(&m ,&(m *lp), &n, &v, &p, &record.brdf) * lc
     } else {
         Vector3::repeat(0.0)
     }
 }
 
 fn main() {
-    let width = 128;
+    let width = 256;
     let height = width;
 
     let mut im = image::RgbImage::new(width, height);
@@ -90,7 +90,7 @@ fn main() {
 
     let mut camera = PerspectiveCamera::new(Vector2::<u32>::new(width, height));
     camera.isometry = na::geometry::Isometry3::look_at_lh(
-        &Vector3::new(0.0, 0.0, 2.7).into(),
+        &Vector3::new(0.0, 0.0, 2.2).into(),
         &Point3::origin(),
         &Vector3::y_axis(),
     );
@@ -99,11 +99,11 @@ fn main() {
     let mut scene = cornell_box(box_size);
 
     let mut ball = Object::new(Sphere::new(
-        Point3::new(0.0, -box_size + 1.1, -box_size + 0.7),
-        1.1,
+        Point3::new(0.6, -box_size + 0.7, -box_size + 0.7),
+        0.7,
     ));
     ball.brdf = Box::new(MicrofacetBRDF {
-        albedo: Vector3::<f64>::new(0.0, 0.5, 0.5),
+        albedo: Vector3::<f64>::repeat(1.0),
         f0: Vector3::<f64>::repeat(0.8),
         roughness: 0.6,
         specular: 0.5,
