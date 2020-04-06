@@ -9,7 +9,7 @@ pub mod camera;
 use crate::camera::PerspectiveCamera;
 
 mod brdf;
-use crate::brdf::{BRDFInput, DiffuseBRDF, MicrofacetBRDF};
+use crate::brdf::{BRDFInput, DiffuseBRDF};
 
 pub mod object;
 use crate::object::*;
@@ -37,7 +37,7 @@ pub mod light;
 use crate::light::*;
 
 fn radiance(depth: i32, ray: &Ray, scene: &dyn object::Intersect) -> Vector3<f64> {
-    if depth >= 2 {
+    if depth >= 4 {
         return Vector3::repeat(0.0);
     }
 
@@ -52,14 +52,12 @@ fn radiance(depth: i32, ray: &Ray, scene: &dyn object::Intersect) -> Vector3<f64
         let e = record.brdf.e();
 
         let light = light::DiskLight {
-            pos: Point3::<f64>::new(0.0, 1.6, 0.0),
+            pos: Point3::<f64>::new(0.0, 1.5, 0.0),
             color: Vector3::<f64>::new(1.0, 1.0, 1.0),
             power: 1.0,
             radius: 0.6,
             normal: Vector3::<f64>::new(0.0, -1.0, 0.0)
         };
-
-        let mut lc: f64 = 0.0;
 
         let lp = light.sample_point();
 
@@ -68,21 +66,36 @@ fn radiance(depth: i32, ray: &Ray, scene: &dyn object::Intersect) -> Vector3<f64
             direction: (lp - o).normalize()
         };
 
+        let mut lc = Vector3::<f64>::zeros();
+
         if let Some(srecord) = scene.intersect(&sr) {
             if srecord.t > (lp - o).norm() {
-                lc = 1.0;
+                let lp2 = m * lp;
+                let lv = (lp2 - p).normalize();
+                let ld = (lp2 - p).norm_squared();
+        
+                let c = light.color * light.power;
+        
+                let dot = n.dot(&lv).min(1.0).max(0.0);
+                let dot2 = (m * light.normal).dot(&-lv).max(0.0).min(1.0);
+        
+                let lf = record.brdf.f(&BRDFInput::new(&n, &lv, &v));
+
+                let lpdf = std::f64::consts::PI * light.radius * light.radius;
+
+                lc = lf * dot * (dot2 / (lpdf * ld));
+                lc = lc.component_mul(&c);
             }
         }
 
-        e + (f * pdf).component_mul(&radiance(depth + 1, &r, scene)) * n.dot(&l)
-          +  light.shade(&m ,&(m *lp), &n, &v, &p, &record.brdf) * lc
+        e + lc + (f * pdf).component_mul(&radiance(depth + 1, &r, scene)) * n.dot(&l)
     } else {
         Vector3::repeat(0.0)
     }
 }
 
 fn main() {
-    let width = 256;
+    let width = 128;
     let height = width;
 
     let mut im = image::RgbImage::new(width, height);
@@ -90,7 +103,7 @@ fn main() {
 
     let mut camera = PerspectiveCamera::new(Vector2::<u32>::new(width, height));
     camera.isometry = na::geometry::Isometry3::look_at_lh(
-        &Vector3::new(0.0, 0.0, 2.2).into(),
+        &Vector3::new(0.0, 0.0, 2.7269).into(),
         &Point3::origin(),
         &Vector3::y_axis(),
     );
@@ -102,14 +115,20 @@ fn main() {
         Point3::new(0.6, -box_size + 0.7, -box_size + 0.7),
         0.7,
     ));
-    ball.brdf = Box::new(MicrofacetBRDF {
-        albedo: Vector3::<f64>::repeat(1.0),
-        f0: Vector3::<f64>::repeat(0.8),
-        roughness: 0.6,
-        specular: 0.5,
+    ball.brdf = Box::new(DiffuseBRDF {
+        color: Vector3::<f64>::repeat(1.0),
     });
 
     scene.primitives.push(Box::new(ball));
+
+    let spp = 512;
+
+    use indicatif::{ProgressBar, ProgressStyle};
+
+    let pb = ProgressBar::new((im_width * im_height) as u64);
+    pb.set_style(ProgressStyle::default_bar()
+        .template("{spinner:.green} [{elapsed}] {bar:40.cyan/blue} {msg} ({eta})")
+        .progress_chars("##-"));
 
     let start = Instant::now();
 
@@ -119,7 +138,6 @@ fn main() {
 
             let mut c = Vector3::<f64>::repeat(0.0);
 
-            let spp = 100;
             for _ in 0..spp {
                 c += radiance(0, &ray, &scene);
             }
@@ -127,9 +145,13 @@ fn main() {
 
             let pixel = im.get_pixel_mut(i, j);
 
-            pixel[0] = (c[0].min(1.0) * 255.0) as u8;
-            pixel[1] = (c[1].min(1.0) * 255.0) as u8;
-            pixel[2] = (c[2].min(1.0) * 255.0) as u8;
+            pixel[1] = (c[1].powf(0.4545).min(1.0) * 255.0) as u8;
+            pixel[2] = (c[2].powf(0.4545).min(1.0) * 255.0) as u8;
+            pixel[0] = (c[0].powf(0.4545).min(1.0) * 255.0) as u8;
+
+            pb.set_message(&format!("W:[{}, {}] H:[{}, {}]",
+                i, im_width, j, im_height));
+            pb.inc(1);
         }
     }
 
