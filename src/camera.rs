@@ -1,6 +1,7 @@
 extern crate nalgebra as na;
 use na::geometry::{Isometry3, Point3};
 use na::{Vector2, Vector3};
+use rand::random;
 
 use crate::ray::Ray;
 
@@ -20,11 +21,16 @@ impl PerspectiveCamera {
     pub fn get_ray(&self, i: u32, j: u32) -> Ray {
         let p = self.to_screen_space(i, j);
 
+        let v = Vector3::<f64>::new(
+            p.x + random::<f64>() / (self.img_dimensions.x as f64),
+            p.y + random::<f64>() / (self.img_dimensions.y as f64),
+            -1.0,
+        )
+        .normalize();
+
         Ray {
             origin: self.isometry.inverse_transform_point(&Point3::origin()),
-            direction: self
-                .isometry
-                .inverse_transform_vector(&Vector3::<f64>::new(p[0], p[1], 1.0).normalize()),
+            direction: self.isometry.inverse_transform_vector(&v),
         }
     }
 

@@ -24,12 +24,9 @@ impl<T: primitive::Primitive> Object<T> {
     pub fn new(primitive: T) -> Object<T> {
         Object {
             primitive,
-            brdf: Box::new(MicrofacetBRDF::new(
-                Vector3::<f64>::new(0.9, 0.3, 0.2),
-                Vector3::<f64>::new(0.58, 0.58, 0.58),
-                0.27,
-                0.8,
-            )),
+            brdf: Box::new(DiffuseBRDF {
+                color: Vector3::<f64>::repeat(1.0),
+            }),
         }
     }
 }

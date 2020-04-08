@@ -23,24 +23,33 @@ pub fn onb(origin: &Point3<f64>, z: &Vector3<f64>) -> Isometry3<f64> {
     }
 }
 
-pub fn init_vectors(
-    ray: &Ray,
-    record: &object::IntersectionRecord,
-) -> (
-    Isometry3<f64>,
-    Point3<f64>,
-    Vector3<f64>,
-    Vector3<f64>,
-    Point3<f64>,
-) {
-    let o: Point3<f64> = (ray.origin.coords + record.t * ray.direction).into();
-    let m = onb(&o, &record.normal);
+pub struct SampleRecord {
+    pub o: Point3<f64>,
+    pub on: Vector3<f64>,
+    pub m: Isometry3<f64>,
+    pub n: Vector3<f64>,
+    pub v: Vector3<f64>,
+    pub p: Point3<f64>,
+}
 
-    let p = m * o;
-    let d = m * -ray.direction;
-    let n = m * record.normal;
+impl SampleRecord {
+    pub fn new(ray: &Ray, record: &object::IntersectionRecord) -> SampleRecord {
+        let o: Point3<f64> = (ray.origin.coords + record.t * ray.direction).into();
+        let m = onb(&o, &record.normal);
 
-    (m, p, d, n, o)
+        let p = m * o;
+        let v = m * -ray.direction;
+        let n = Vector3::new(0.0, 0.0, 1.0);
+
+        SampleRecord {
+            o,
+            on: record.normal,
+            m,
+            n,
+            v,
+            p,
+        }
+    }
 }
 
 pub fn reflect_onb(v: &Vector3<f64>) -> Vector3<f64> {
@@ -54,11 +63,4 @@ pub fn uniform_hemisphere() -> Vector3<f64> {
     let phi = (1.0 - 1.0 * random::<f64>()).acos();
 
     Vector3::<f64>::new(phi.sin() * theta.cos(), phi.sin() * theta.sin(), phi.cos()).normalize()
-}
-
-pub fn sample_ray(m: &Isometry3<f64>, o: &Point3<f64>, l: &Vector3<f64>) -> Ray {
-    Ray {
-        origin: *o,
-        direction: m.inverse_transform_vector(l),
-    }
 }

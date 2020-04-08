@@ -100,22 +100,6 @@ pub struct MicrofacetBRDF {
     pub specular: f64,
 }
 
-impl MicrofacetBRDF {
-    pub fn new(
-        albedo: Vector3<f64>,
-        f0: Vector3<f64>,
-        roughness: f64,
-        specular: f64,
-    ) -> MicrofacetBRDF {
-        MicrofacetBRDF {
-            albedo,
-            f0,
-            roughness,
-            specular,
-        }
-    }
-}
-
 impl BRDF for MicrofacetBRDF {
     fn f(&self, input: &BRDFInput) -> Vector3<f64> {
         let h = (input.l + input.v).normalize();

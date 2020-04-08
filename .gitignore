@@ -2,3 +2,7 @@
 **/*.rs.bk
 /tests
 test_image*
+test*
+*.blend
+*.py
+*.obj

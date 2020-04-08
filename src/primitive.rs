@@ -119,6 +119,7 @@ pub struct Vertex {
     // pub tcd: Vector3<f64>,
 }
 
+#[derive(Clone)]
 pub struct Triangle {
     pub vert: Vec<Vertex>,
 }
@@ -146,10 +147,9 @@ impl Primitive for Triangle {
         let u = inv * p.dot(&oa);
         let v = inv * q.dot(&ray.direction);
 
-        if u < 0.0 || u > 1.0 || v < 0.0 || u + v > 1.0 {
+        if u < 0.0 || u > 1.0 || v < 0.0 || u + v > 1.0 || t < 0.0 {
             None
         } else {
-            // let normal = e1.cross(&e2).normalize();
             let w = 1.0 - u - v;
 
             let normal =
