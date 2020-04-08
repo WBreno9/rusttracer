@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 extern crate nalgebra as na;
 use na::Vector3;
 
@@ -15,22 +13,14 @@ struct Bounds {
 
 impl Bounds {
     fn intersect(&self, ray: &Ray) -> bool {
-        let inv = Vector3::repeat(1.00001).component_div(&ray.direction);
+        let inv = Vector3::repeat(1.000001).component_div(&ray.direction);
 
         let t0 = (self.min - ray.origin.coords).component_mul(&inv);
         let t1 = (self.max - ray.origin.coords).component_mul(&inv);
 
-        let vmin = Vector3::new(
-            t0.x.min(t1.x),
-            t0.y.min(t1.y),
-            t0.z.min(t1.z),
-        );
+        let vmin = Vector3::new(t0.x.min(t1.x), t0.y.min(t1.y), t0.z.min(t1.z));
 
-        let vmax = Vector3::new(
-            t0.x.max(t1.x),
-            t0.y.max(t1.y),
-            t0.z.max(t1.z),
-        );
+        let vmax = Vector3::new(t0.x.max(t1.x), t0.y.max(t1.y), t0.z.max(t1.z));
 
         let tmin = vmin.x.max(vmin.y.max(vmin.z));
         let tmax = vmax.x.min(vmax.y.min(vmax.z));
@@ -109,7 +99,7 @@ impl Node {
                     res += Vector3::new(0.0, 0.0, 0.001) + node.right.intersect_debug(&ray);
                 };
 
-               res
+                res
             }
 
             Node::Leaf(leaf) => {
@@ -130,24 +120,6 @@ impl Node {
         }
     }
 }
-
-// Node::Internal(node) => {
-//     let mut closest: IntersectionRecord;
-
-//     if let Some(left_res) = node.left.intersect(ray) {
-//         closest = left_res;
-
-//         if let Some(right_res) = node.right.intersect(ray) {
-//             if closest.t > right_res.t {
-//                 closest = right_res;
-//             }
-//         }
-
-//         Some(closest)
-//     } else {
-//         node.right.intersect(ray)
-//     }
-// }
 
 pub struct Tree {
     root: Node,

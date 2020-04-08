@@ -59,7 +59,7 @@ fn direct_light(s: &sample::SampleRecord, brdf: &Box<dyn BRDF>, scene: &Scene) -
     let lpo = lp - s.o;
 
     let sr = Ray {
-        origin: s.o + s.on * 0.000001,
+        origin: s.o + s.on * 0.0000000001,
         direction: lpo.normalize(),
     };
 
@@ -81,8 +81,7 @@ fn direct_light(s: &sample::SampleRecord, brdf: &Box<dyn BRDF>, scene: &Scene) -
             v: &s.v,
         });
 
-        direct = lf * dot * (1.0 / (lpdf * ld));
-        direct = direct.component_mul(&light.shade(&s.m, &s.o, &lv));
+        direct = (lf * dot).component_mul(&(light.shade(&s.m, &s.o, &lv) / (lpdf * ld)));
     }
 
     direct * scene.lights.len() as f64
@@ -108,7 +107,7 @@ fn radiance(depth: i32, mut ray: Ray, scene: &Scene) -> Vector3<f64> {
             let lc = direct_light(&s, &record.brdf, &scene);
 
             ray = Ray {
-                origin: s.o + l * 0.000001,
+                origin: s.o + l * 0.0000000001,
                 direction: s.m.inverse_transform_vector(&l),
             };
 
@@ -134,19 +133,17 @@ fn main() {
         &Vector3::y_axis(),
     );
     let scene = Scene {
-        obj: Box::new(Object::new(bvh::Tree::new(
-            mesh::load_mesh_aggregate("suzanne.obj").unwrap(),
-        ))),
+        obj: Box::new(mesh::load_model_bvh("suzanne.obj").unwrap()),
         lights: vec![Box::new(DiskLight {
             pos: Point3::<f64>::new(0.0, 1.5, 0.0),
             color: Vector3::<f64>::new(1.0, 1.0, 1.0),
-            power: 1.0,
+            power: 0.7,
             radius: 0.6,
             normal: Vector3::<f64>::new(0.0, -1.0, 0.0),
         })],
     };
 
-    let spp = 512;
+    let spp = 1;
 
     use indicatif::{ProgressBar, ProgressStyle};
 
@@ -168,15 +165,15 @@ fn main() {
 
             for _ in 0..spp {
                 let ray = camera.get_ray(i, j);
-                c += radiance(4, ray, &scene);
+                c += radiance(1, ray, &scene);
             }
             c /= spp as f64;
 
             let pixel = im.get_pixel_mut(i, j);
 
-            pixel[0] = (c[0].powf(0.4545).min(1.0) * 255.0) as u8;
-            pixel[1] = (c[1].powf(0.4545).min(1.0) * 255.0) as u8;
-            pixel[2] = (c[2].powf(0.4545).min(1.0) * 255.0) as u8;
+            pixel[0] = (c[0].powf(0.22).min(1.0) * 255.0) as u8;
+            pixel[1] = (c[1].powf(0.22).min(1.0) * 255.0) as u8;
+            pixel[2] = (c[2].powf(0.22).min(1.0) * 255.0) as u8;
 
             pb.set_message(&format!(
                 "W:[{:w$}, {}] H:[{:h$}, {}]",
