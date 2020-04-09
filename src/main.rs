@@ -47,7 +47,7 @@ use rand::random;
 impl Scene {
     fn get_light(&self) -> &Box<dyn Light> {
         let i = (random::<f64>() * self.lights.len() as f64).floor() as usize;
-        &self.lights[0]
+        &self.lights[i]
     }
 }
 
@@ -127,8 +127,8 @@ fn main() {
     let (im_width, im_height) = im.dimensions();
 
     let camera = Camera::new(
-        &Vector3::new(0.000000001, 1.2891, 5.873).into(),
-        &-(Vector3::new(0.000000001, 1.2891, 5.873) - Vector3::new(0.0, 1.2891, 0.0)).normalize(),
+        &Vector3::new(0.000000001, 3.2891, 6.673).into(),
+        &-(Vector3::new(0.000000001, 3.2891, 6.673) - Vector3::new(0.0, 1.2891, 1.8)).normalize(),
         Vector2::<u32>::new(width, height),
         45.0,
     );
@@ -140,14 +140,21 @@ fn main() {
     //     33.3,
     // );
 
+    //  let camera = Camera::new(
+    //     &Vector3::repeat(1.0).into(),
+    //     &-Vector3::new(1.0, 1.0, 1.0).normalize(),
+    //     Vector2::<u32>::new(width, height),
+    //     45.5,
+    // );
+
     let scene = Scene {
-        obj: Box::new(mesh::load_model_bvh("tests/roots.obj").unwrap()),
+        obj: Box::new(mesh::load_model_bvh("tests/final.obj").unwrap()),
         lights: vec![
             Box::new(DiskLight {
-                pos: Point3::<f64>::new(0.0, 3.0, 0.0),
+                pos: Point3::<f64>::new(0.0, 4.5, 0.0),
                 color: Vector3::<f64>::new(1.0, 1.0, 1.0),
-                power: 1.0,
-                radius: 0.6,
+                power: 10.7,
+                radius: 1.8,
                 normal: (Point3::origin() - Point3::<f64>::new(0.0, 4.0, 0.0)).normalize(),
             }),
             // Box::new(DiskLight {
@@ -160,7 +167,7 @@ fn main() {
         ],
     };
 
-    let spp = 32;
+    let spp = 256;
 
     use indicatif::{ProgressBar, ProgressStyle};
 
@@ -185,11 +192,6 @@ fn main() {
                 c += radiance(3, ray, &scene);
             }
             c /= spp as f64;
-
-            // let ray = camera.get_ray(i, j);
-            // for mesh in model.iter() {
-            //     c += mesh.primitive.debug(&ray)
-            // }
 
             let pixel = im.get_pixel_mut(i, j);
 

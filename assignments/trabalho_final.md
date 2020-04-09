@@ -2,7 +2,139 @@
 
 ![roots](images/roots_4h_256spp.png)
 
-## Microfacet BRDF
+## Amostragem Explícita da Luz
+
+<img src="https://render.githubusercontent.com/render/math?math=\LARGE L(x, \omega_{o}) = \int_{x' \in R} g(x, x')f(x, \omega_{i}, \omega_{o})L_{e}(x', \omega_{i})\cos\theta \frac{\cos\theta'}{p(x')\|x' - x\|^2}">
+
+```rust
+fn direct_light(s: &sample::SampleRecord, brdf: &Box<dyn BRDF>, scene: &Scene) -> Vector3<f64> {
+    let light = scene.get_light();
+
+    let (lp, lpdf) = light.sample_point();
+
+    let lpo = lp - s.o;
+
+    let sr = Ray {
+        origin: s.o + s.on * 0.0000000001,
+        direction: lpo.normalize(),
+    };
+
+    let mut direct = Vector3::<f64>::zeros();
+
+    let res = scene.obj.intersect(&sr);
+
+    if res.is_none() || res.unwrap().t > lpo.norm() {
+        let lp2 = s.m * lp;
+        let lp2s = lp2 - s.p;
+        let lv = lp2s.normalize();
+        let ld = lp2s.norm_squared();
+
+        let dot = s.n.dot(&lv).min(1.0).max(0.0);
+
+        let lf = brdf.f(&BRDFInput {
+            n: &s.n,
+            l: &lv,
+            v: &s.v,
+        });
+
+        direct = (lf * dot).component_mul(&(light.shade(&s.m, &s.o, &lv) 
+          / (lpdf * ld)));
+    }
+
+    direct * scene.lights.len() as f64
+}
+```
+
+Amostragem de luz de área em formato de disco.
+
+```rust
+    fn sample_point(&self) -> (Point3<f64>, f64) {
+        let sm = sample::onb(&self.pos, &self.normal);
+
+        let theta = 2.0 * PI * random::<f64>();
+        let r = self.radius * random::<f64>();
+
+        (
+            sm.inverse_transform_point(&Point3::<f64>::new(
+                r.sqrt() * theta.cos(),
+                r.sqrt() * theta.sin(),
+                0.0,
+            )),
+            1.0 / std::f64::consts::PI * self.radius * self.radius,
+        )
+    }
+```
+
+## Estrutura de aceleração
+
+A estrutura de aceleração é uma BVH simples.
+
+![suzanne](images/suzanne_bvh.png)
+
+![suzanne](images/random_tri_bvh.png)
+
+![suzanne](images/roots_bvh.png)
+
+
+## Materiais
+
+Os materiais são descritos em um aquivo JSON que é carregado junto o modelo .obj
+
+### Diffuse
+
+![ball_diffuse](images/ball_diffuse.png)
+
+```json
+    "material": {
+        "name": "diffuse",
+        "color": {
+          "r": 0.93,
+          "g": 0.93,
+          "b": 0.93
+        }
+      }
+```
+
+### Mirror
+
+![ball_mirror](images/ball_mirror.png)
+
+```json
+    "material": {
+        "name": "mirror",
+        "color": {
+          "r": 0.83,
+          "g": 0.83,
+          "b": 0.83
+        }
+      }
+```
+
+### Microfacet BRDF
+
+O material utiliza a distribuição de GGX, função de mascaramento é uma aproximação do Smith G1 por Brian Karris e a funcção de fresnel é a aproximação de Schlick.
+
+![ball_microfacet](images/ball_microfacet.png)
+
+
+```json
+    "material": {
+        "name": "microfacet",
+        "albedo": {
+          "r": 0.1,
+          "g": 0.1,
+          "b": 0.1
+        },
+        "f0": {
+          "r": 0.8,
+          "g": 0.8,
+          "b": 0.8
+        },
+        "roughness": 0.12,
+        "specular": 0.97
+      }
+```
+
 
 <img src="https://render.githubusercontent.com/render/math?math=\LARGE f_{spec} = \frac{F(h,l)G_{2}(l,v,h)D(h)}{4|n \cdot l||n \cdot v|}">
 
@@ -64,55 +196,9 @@ fn fresnel_schlick(f0: &Vector3<f64>, n: &Vector3<f64>, l: &Vector3<f64>) -> Vec
 }
 ```
 
-## Amostragem Explícita da Luz
-
-<img src="https://render.githubusercontent.com/render/math?math=\LARGE L(x, \omega_{o}) = \int_{x' \in R} g(x, x')f(x, \omega_{i}, \omega_{o})L_{e}(x', \omega_{i})\cos\theta \frac{\cos\theta'}{p(x')\|x' - x\|^2}">
-
-```rust
-fn direct_light(s: &sample::SampleRecord, brdf: &Box<dyn BRDF>, scene: &Scene) -> Vector3<f64> {
-    let light = scene.get_light();
-
-    let (lp, lpdf) = light.sample_point();
-
-    let lpo = lp - s.o;
-
-    let sr = Ray {
-        origin: s.o + s.on * 0.0000000001,
-        direction: lpo.normalize(),
-    };
-
-    let mut direct = Vector3::<f64>::zeros();
-
-    let res = scene.obj.intersect(&sr);
-
-    if res.is_none() || res.unwrap().t > lpo.norm() {
-        let lp2 = s.m * lp;
-        let lp2s = lp2 - s.p;
-        let lv = lp2s.normalize();
-        let ld = lp2s.norm_squared();
-
-        let dot = s.n.dot(&lv).min(1.0).max(0.0);
-
-        let lf = brdf.f(&BRDFInput {
-            n: &s.n,
-            l: &lv,
-            v: &s.v,
-        });
-
-        direct = (lf * dot).component_mul(&(light.shade(&s.m, &s.o, &lv) 
-          / (lpdf * ld)));
-    }
-
-    direct * scene.lights.len() as f64
-}
-```
-
-## Estrutura de aceleração: 
-
-![suzanne](images/suzanne_bvh.png)
-
-![suzanne](images/random_tri_bvh.png)
-
-![suzanne](images/roots_bvh.png)
-
 ## Gamma Correction
+
+![ball_mirror](images/ball_mirror.png)![gamma_off](images/gamma_off.png)
+
+Gamma de 2.2 ligado / desligado
+
