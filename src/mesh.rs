@@ -1,6 +1,3 @@
-#![allow(dead_code)]
-#![allow(unused_imports)]
-#![allow(unused_variables)]
 extern crate nalgebra as na;
 extern crate obj;
 extern crate serde_json;
@@ -18,16 +15,12 @@ use crate::brdf::*;
 
 use crate::bvh;
 
-use std::collections::HashMap;
-
 type Mesh = object::Object<AggregatePrimitive<Triangle>>;
 type Model = object::AggregateObject;
 
 type BVHMesh = object::Object<bvh::Tree>;
 
 fn create_material(meta_data: &serde_json::Value, name: &str) -> Box<dyn BRDF> {
-    println!("{}", name);
-
     let data = &meta_data["groups"]
         .as_array()
         .unwrap()
@@ -151,7 +144,7 @@ pub fn load_model(path: &str) -> Result<Model, Box<dyn Error>> {
 
     let mut model = Model::new();
 
-    for (index, obj) in obj_mesh.objects[0].groups.iter().enumerate() {
+    for (index, _) in obj_mesh.objects[0].groups.iter().enumerate() {
         model
             .primitives
             .push(Box::new(load_mesh_group(&obj_mesh, index, &meta_data)?));
@@ -189,7 +182,7 @@ pub fn load_model_bvh(path: &str) -> Result<Model, Box<dyn Error>> {
 
     let mut model = Model::new();
 
-    for (index, obj) in obj_mesh.objects[0].groups.iter().enumerate() {
+    for (index, _) in obj_mesh.objects[0].groups.iter().enumerate() {
         let mesh = load_mesh_group(&obj_mesh, index, &meta_data)?;
 
         model.primitives.push(Box::new(BVHMesh {

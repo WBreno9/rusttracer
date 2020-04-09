@@ -1,20 +1,27 @@
 extern crate nalgebra as na;
-use na::geometry::{Isometry3, Point3};
+use na::{Isometry3, Point3};
 use na::{Vector2, Vector3};
 use rand::random;
 
 use crate::ray::Ray;
 
-pub struct PerspectiveCamera {
+pub struct Camera {
     pub isometry: Isometry3<f64>,
     pub img_dimensions: Vector2<u32>,
+    pub fov: f64,
 }
 
-impl PerspectiveCamera {
-    pub fn new(img_dimensions: Vector2<u32>) -> PerspectiveCamera {
-        PerspectiveCamera {
-            isometry: Isometry3::<f64>::identity(),
+impl Camera {
+    pub fn new(
+        origin: &Point3<f64>,
+        direction: &Vector3<f64>,
+        img_dimensions: Vector2<u32>,
+        fov: f64,
+    ) -> Camera {
+        Camera {
+            isometry: Isometry3::look_at_rh(origin, &(origin + direction), &Vector3::y_axis()),
             img_dimensions: img_dimensions,
+            fov,
         }
     }
 
@@ -24,7 +31,7 @@ impl PerspectiveCamera {
         let v = Vector3::<f64>::new(
             p.x + random::<f64>() / (self.img_dimensions.x as f64),
             p.y + random::<f64>() / (self.img_dimensions.y as f64),
-            -1.0,
+            -1.0 / (self.fov / 2.0).to_radians().tan(),
         )
         .normalize();
 

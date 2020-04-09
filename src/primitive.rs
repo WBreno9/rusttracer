@@ -4,6 +4,7 @@ use na::Vector3;
 
 use crate::ray::Ray;
 
+#[derive(Clone)]
 pub struct IntersectionRecord {
     pub t: f64,
     pub normal: Vector3<f64>,
@@ -116,7 +117,6 @@ impl Primitive for Plane {
 pub struct Vertex {
     pub pos: Vector3<f64>,
     pub nrm: Vector3<f64>,
-    // pub tcd: Vector3<f64>,
 }
 
 #[derive(Clone)]

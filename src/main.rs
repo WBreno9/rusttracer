@@ -6,7 +6,7 @@ use na::Vector2;
 use na::Vector3;
 
 pub mod camera;
-use crate::camera::PerspectiveCamera;
+use crate::camera::Camera;
 
 mod brdf;
 use crate::brdf::{BRDFInput, BRDF};
@@ -126,21 +126,30 @@ fn main() {
     let mut im = image::RgbImage::new(width, height);
     let (im_width, im_height) = im.dimensions();
 
-    let mut camera = PerspectiveCamera::new(Vector2::<u32>::new(width, height));
-    camera.isometry = na::geometry::Isometry3::look_at_rh(
-        &Vector3::new(0.000000001, 0.0000001, 2.7269).into(),
-        &Point3::origin(),
-        &Vector3::y_axis(),
+    let camera = Camera::new(
+        &Vector3::new(0.000000001, 1.2891, 5.873).into(),
+        &Vector3::new(0.0, 0.0, -1.0),
+        Vector2::<u32>::new(width, height),
+        33.3,
     );
     let scene = Scene {
-        obj: Box::new(mesh::load_model_bvh("suzanne.obj").unwrap()),
-        lights: vec![Box::new(DiskLight {
-            pos: Point3::<f64>::new(0.0, 1.5, 0.0),
-            color: Vector3::<f64>::new(1.0, 1.0, 1.0),
-            power: 0.7,
-            radius: 0.6,
-            normal: Vector3::<f64>::new(0.0, -1.0, 0.0),
-        })],
+        obj: Box::new(mesh::load_model_bvh("tests/random_tri.obj").unwrap()),
+        lights: vec![
+            Box::new(DiskLight {
+                pos: Point3::<f64>::new(0.0, 4.0, 0.0),
+                color: Vector3::<f64>::new(1.0, 1.0, 1.0),
+                power: 10.0,
+                radius: 1.0,
+                normal: (Point3::origin() - Point3::<f64>::new(0.0, 4.0, 0.0)).normalize(),
+            }),
+            Box::new(DiskLight {
+                pos: Point3::<f64>::new(0.0, 1.0, 4.0),
+                color: Vector3::<f64>::new(1.0, 1.0, 1.0),
+                power: 0.6,
+                radius: 0.5,
+                normal: (Point3::origin() - Point3::<f64>::new(0.0, 1.0, 4.0)).normalize(),
+            }),
+        ],
     };
 
     let spp = 1;
@@ -192,63 +201,3 @@ fn main() {
 
     im.save("test_image.ppm").unwrap();
 }
-
-// fn cornell_box(box_size: f64) -> AggregateObject {
-//     let mut scene = AggregateObject::new();
-
-//     let ceiling_floor_brdf = Box::new(DiffuseBRDF {
-//         color: Vector3::<f64>::new(1.0, 1.0, 1.0),
-//     });
-
-//     let mut floor = Object::new(Plane {
-//         pos: Point3::new(0.0, -box_size, 0.0),
-//         nrm: Vector3::new(0.0, 1.0, 0.0),
-//     });
-//     floor.brdf = ceiling_floor_brdf.clone();
-
-//     let mut ceiling = Object::new(Plane {
-//         pos: Point3::new(0.0, box_size, 0.0),
-//         nrm: Vector3::new(0.0, -1.0, 0.0),
-//     });
-//     ceiling.brdf = ceiling_floor_brdf.clone();
-
-//     let mut back_wall = Object::new(Plane {
-//         pos: Point3::new(0.0, 0.0, -box_size),
-//         nrm: Vector3::new(0.0, 0.0, 1.0),
-//     });
-//     back_wall.brdf = ceiling_floor_brdf.clone();
-
-//     let mut left_wall = Object::new(Plane {
-//         pos: Point3::new(box_size, 0.0, 0.0),
-//         nrm: Vector3::new(-1.0, 0.0, 0.0),
-//     });
-//     left_wall.brdf = Box::new(DiffuseBRDF {
-//         color: Vector3::<f64>::new(0.0, 1.0, 0.0),
-//     });
-
-//     let mut right_wall = Object::new(Plane {
-//         pos: Point3::new(-box_size, 0.0, 0.0),
-//         nrm: Vector3::new(1.0, 0.0, 0.0),
-//     });
-//     right_wall.brdf = Box::new(DiffuseBRDF {
-//         color: Vector3::<f64>::new(1.0, 0.0, 0.0),
-//     });
-
-//     // let mut light = Object::new(Sphere::new(
-//     //     Point3::new(0.0, box_size, 0.0),
-//     //     0.5,
-//     //     ));
-//     // light.brdf = Box::new(EmissiveBRDF::new(
-//     //     Vector3::<f64>::new(1.0, 1.0, 1.0),
-//     //     22.0,
-//     // ));
-
-//     scene.primitives.push(Box::new(floor));
-//     scene.primitives.push(Box::new(ceiling));
-//     scene.primitives.push(Box::new(back_wall));
-//     scene.primitives.push(Box::new(left_wall));
-//     scene.primitives.push(Box::new(right_wall));
-//     // scene.primitives.push(Box::new(light));
-
-//     scene
-// }

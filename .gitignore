@@ -1,5 +1,7 @@
 /target
 **/*.rs.bk
+Cargo.lock
+
 /tests
 test_image*
 test*

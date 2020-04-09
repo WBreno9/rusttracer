@@ -238,6 +238,7 @@ dependencies = [
  "console",
  "lazy_static",
  "number_prefix",
+ "rayon",
  "regex",
 ]
 
@@ -558,6 +559,7 @@ dependencies = [
  "nalgebra",
  "obj",
  "rand",
+ "rayon",
  "serde_json",
 ]
 
