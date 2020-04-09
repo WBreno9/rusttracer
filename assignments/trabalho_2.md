@@ -89,4 +89,5 @@ impl Triangle {
 ### Sofa (53,343 tris, 13.4min) 
 
 ![sofa3](images/sofa3_nrm.png)
+
 Arquivo .blend por [Zero4mike](https://blendswap.com/blend/10179)

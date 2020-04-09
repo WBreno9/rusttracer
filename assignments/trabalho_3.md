@@ -123,4 +123,5 @@ Renders da distância de cada ponto de intersecção
 ### Sofa (53,343 tris)
 
 ![sofa3](images/sofa3_dist.png)
+
 Arquivo .blend por [Zero4mike](https://blendswap.com/blend/10179)
