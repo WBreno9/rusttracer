@@ -1,33 +1,6 @@
 # Atividade II - Teste de Intersecção Raio-Triângulo
 
-```rust
-#[derive(Clone)]
-pub struct IntersectionRecord {
-    pub t: f64,
-    pub normal: Vector3<f64>,
-}
-
-pub trait Primitive {
-    fn intersect(&self, ray: &Ray) -> Option<IntersectionRecord>;
-}
-```
-
-
-```rust
-#[derive(Debug, Clone, Copy)]
-pub struct Vertex {
-    pub pos: Vector3<f64>,
-    pub nrm: Vector3<f64>,
-}
-```
-
-```rust
-#[derive(Clone)]
-pub struct Triangle {
-    pub vert: Vec<Vertex>,
-}
-```
-
+O algoritmo selecionado foi o Moller-Trumbore por ser simples e de facil implementação. Branches no algoritmo foram removidas e subtituidas por um ínico branch para simplificar o codigo. Nesse estagio é calculado as coordenadas baricentricas do ponto de itersecção para gerar vectores normais suavizados.
 
 ```rust
 fn intersect(&self, ray: &Ray) -> Option<IntersectionRecord> {
@@ -59,3 +32,61 @@ fn intersect(&self, ray: &Ray) -> Option<IntersectionRecord> {
         }
     }
 ```
+
+Todas as primitivas utilizam da mesma interface ( traits em Rust )
+
+```rust
+#[derive(Clone)]
+pub struct IntersectionRecord {
+    pub t: f64,
+    pub normal: Vector3<f64>,
+}
+
+pub trait Primitive {
+    fn intersect(&self, ray: &Ray) -> Option<IntersectionRecord>;
+}
+```
+
+Vertices possuem sua posiçao e vector normal, opcionalment pode haver as coordenas UV para texturas
+```rust
+#[derive(Debug, Clone, Copy)]
+pub struct Vertex {
+    pub pos: Vector3<f64>,
+    pub nrm: Vector3<f64>,
+    // pub tcd: Vector2<f64>,
+}
+```
+
+Triangulo são apenas um vector de vectices
+```rust
+#[derive(Clone)]
+pub struct Triangle {
+    pub vert: Vec<Vertex>,
+}
+```
+
+O numero de vertices é verificado no construtor de um triângulo
+```rust
+impl Triangle {
+    pub fn new(v: &Vec<Vertex>) -> Triangle {
+        debug_assert!(v.len() == 3);
+
+        Triangle { vert: v.clone() }
+    }
+}
+```
+
+## Testes
+
+### Triângulos aletoriamente distribuidos (158 tris, 1.4s)
+
+![random_tri_nrm](images/random_tri_nrm.png)
+
+### Blender Suzanne  (967 tris, 9s)
+
+![suzanne](images/suzanne_nrm.png)
+
+### Sofa (53,343 tris, 13.4min) 
+
+![sofa3](images/sofa3_nrm.png)
+Arquivo .blend por [Zero4mike](https://blendswap.com/blend/10179)
