@@ -13,6 +13,7 @@ pub struct IntersectionRecord<'a> {
 
 pub trait Intersect {
     fn intersect(&self, ray: &Ray) -> Option<IntersectionRecord>;
+    
 }
 
 pub struct Object<T: primitive::Primitive> {

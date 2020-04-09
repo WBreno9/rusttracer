@@ -151,11 +151,11 @@ pub fn load_mesh(path: &str) -> Result<Mesh, Box<dyn Error>> {
     use std::path::Path;
     let obj_mesh = obj::Obj::<obj::SimplePolygon>::load(&Path::new(path))?;
 
-    if obj_mesh.objects.len() != 1 {
+    if obj_mesh.objects.len() < 1 {
         return Err("Failed to load obj, file needs to \
                     have at least one object"
             .into());
-    } else if obj_mesh.objects[0].groups.len() != 1 {
+    } else if obj_mesh.objects[0].groups.len() < 1 {
         return Err("Failed to load obj, object needs to \
                     have at least one group"
             .into());
@@ -237,6 +237,39 @@ pub fn load_model_bvh(path: &str) -> Result<Model, Box<dyn Error>> {
 
     Ok(model)
 }
+
+pub fn load_model_bvh_debug(path: &str) -> Result<Vec<BVHMesh>, Box<dyn Error>> {
+    use std::path::Path;
+    let obj_mesh = obj::Obj::<obj::SimplePolygon>::load(&Path::new(path))?;
+
+    if obj_mesh.objects.len() < 1 {
+        return Err("Failed to load obj, file needs to \
+                    have at least one object"
+            .into());
+    } else if obj_mesh.objects[0].groups.len() < 1 {
+        return Err("Failed to load obj, object needs to \
+                    have at least one group"
+            .into());
+    }
+
+    let meta_path = path.to_owned() + ".json";
+
+    let meta_data = serde_json::from_str(&std::fs::read_to_string(meta_path)?)?;
+
+    let mut meshes: Vec<BVHMesh> = vec![];
+
+    for (index, _) in obj_mesh.objects[0].groups.iter().enumerate() {
+        let mesh = load_mesh_group(&obj_mesh, index, &meta_data)?;
+
+        meshes.push(BVHMesh {
+            primitive: bvh::Tree::new(mesh.primitive),
+            brdf: mesh.brdf,
+        });
+    }
+
+    Ok(meshes)
+}
+
 
 pub fn load_mesh_aggregate(path: &str) -> Result<AggregatePrimitive<Triangle>, Box<dyn Error>> {
     use std::path::Path;

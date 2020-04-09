@@ -126,15 +126,22 @@ fn main() {
     let mut im = image::RgbImage::new(width, height);
     let (im_width, im_height) = im.dimensions();
 
+    // let camera = Camera::new(
+    //     &Vector3::new(0.000000001, 1.2891, 5.873).into(),
+    //     &-(Vector3::new(0.000000001, 1.2891, 5.873) - Vector3::new(0.0, 1.2891, 0.0)).normalize(),
+    //     Vector2::<u32>::new(width, height),
+    //     33.3,
+    // );
+
     let camera = Camera::new(
-        &Vector3::new(0.000000001, 1.2891, 5.873).into(),
-        &-(Vector3::new(0.000000001, 1.2891, 5.873) - Vector3::new(0.0, 1.2891, 0.0)).normalize(),
+        &Vector3::new(0.000000001, 0.000000001, 5.873).into(),
+        &Vector3::new(0.0, 0.0, -1.0),
         Vector2::<u32>::new(width, height),
         33.3,
     );
 
     let scene = Scene {
-        obj: Box::new(mesh::load_model_bvh("tests/roots.obj").unwrap()),
+        obj: Box::new(mesh::load_model_bvh("tests/suzanne.obj").unwrap()),
         lights: vec![
             Box::new(DiskLight {
                 pos: Point3::<f64>::new(0.0, 4.0, 0.0),
@@ -155,7 +162,7 @@ fn main() {
 
     let spp = 256;
 
-    // let model = mesh::load_model("tests/sofa3.obj").unwrap();
+    let model = mesh::load_model_bvh_debug("tests/suzanne.obj").unwrap();
 
     use indicatif::{ProgressBar, ProgressStyle};
 
@@ -175,17 +182,22 @@ fn main() {
         for j in 0..im_height {
             let mut c = Vector3::<f64>::repeat(0.0);
 
-            for _ in 0..spp {
-                let ray = camera.get_ray(i, j);
-                c += radiance(1, ray, &scene);
+            // for _ in 0..spp {
+            //     let ray = camera.get_ray(i, j);
+            //     c += radiance(1, ray, &scene);
+            // }
+            // c /= spp as f64;
+
+            let ray = camera.get_ray(i, j);
+            for mesh in model.iter() {
+                c += mesh.primitive.debug(&ray)
             }
-            c /= spp as f64;
 
             let pixel = im.get_pixel_mut(i, j);
 
-            pixel[0] = (c[0].powf(1.0/2.0).min(1.0) * 255.0) as u8;
-            pixel[1] = (c[1].powf(1.0/2.0).min(1.0) * 255.0) as u8;
-            pixel[2] = (c[2].powf(1.0/2.0).min(1.0) * 255.0) as u8;
+            pixel[0] = (c[0].powf(1.0/2.2).min(1.0) * 255.0) as u8;
+            pixel[1] = (c[1].powf(1.0/2.2).min(1.0) * 255.0) as u8;
+            pixel[2] = (c[2].powf(1.0/2.2).min(1.0) * 255.0) as u8;
 
             pb.set_message(&format!(
                 "W:[{:w$}, {}] H:[{:h$}, {}]",

@@ -92,11 +92,11 @@ impl Node {
                 let mut res: Vector3<f64> = Vector3::repeat(0.0);
 
                 if node.left_bounds.intersect(&ray) {
-                    res += Vector3::new(0.0, 0.0, 0.001) + node.left.intersect_debug(&ray);
+                    res += Vector3::new(0.0, 0.0, 0.0001) + node.left.intersect_debug(&ray);
                 };
 
                 if node.right_bounds.intersect(&ray) {
-                    res += Vector3::new(0.0, 0.0, 0.001) + node.right.intersect_debug(&ray);
+                    res += Vector3::new(0.0, 0.0, 0.0001) + node.right.intersect_debug(&ray);
                 };
 
                 res
@@ -245,7 +245,7 @@ fn sort_refs(refs: &mut [TriangleRef], axis: SortAxis) {
 }
 
 fn build_node<'a>(mut refs: Vec<TriangleRef>) -> Node {
-    if refs.len() <= 1 {
+    if refs.len() <= 5 {
         return Node::Leaf(LeafNode { refs });
     }
 

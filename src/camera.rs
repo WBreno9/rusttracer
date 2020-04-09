@@ -28,19 +28,19 @@ impl Camera {
     pub fn get_ray(&self, i: u32, j: u32) -> Ray {
         let p = self.to_screen_space(i, j);
 
-        let v = Vector3::<f64>::new(
-            p.x + random::<f64>() / (self.img_dimensions.x as f64),
-            p.y + random::<f64>() / (self.img_dimensions.y as f64),
-            -1.0 / (self.fov / 2.0).to_radians().tan(),
-        )
-        .normalize();
-
         // let v = Vector3::<f64>::new(
-        //     p.x,
-        //     p.y,
+        //     p.x + random::<f64>() / (self.img_dimensions.x as f64),
+        //     p.y + random::<f64>() / (self.img_dimensions.y as f64),
         //     -1.0 / (self.fov / 2.0).to_radians().tan(),
         // )
         // .normalize();
+
+        let v = Vector3::<f64>::new(
+            p.x,
+            p.y,
+            -1.0 / (self.fov / 2.0).to_radians().tan(),
+        )
+        .normalize();
 
         Ray {
             origin: self.isometry.inverse_transform_point(&Point3::origin()),

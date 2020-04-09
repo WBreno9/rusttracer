@@ -1,5 +1,7 @@
 # Trabalho Final
 
+![roots](images/roots_4h_256spp.png)
+
 ## Microfacet BRDF
 
 <img src="https://render.githubusercontent.com/render/math?math=\LARGE f_{spec} = \frac{F(h,l)G_{2}(l,v,h)D(h)}{4|n \cdot l||n \cdot v|}">
@@ -62,7 +64,7 @@ fn fresnel_schlick(f0: &Vector3<f64>, n: &Vector3<f64>, l: &Vector3<f64>) -> Vec
 }
 ```
 
-## Amostragem Explicita da Luz
+## Amostragem Explícita da Luz
 
 <img src="https://render.githubusercontent.com/render/math?math=\LARGE L(x, \omega_{o}) = \int_{x' \in R} g(x, x')f(x, \omega_{i}, \omega_{o})L_{e}(x', \omega_{i})\cos\theta \frac{\cos\theta'}{p(x')\|x' - x\|^2}">
 
@@ -105,6 +107,8 @@ fn direct_light(s: &sample::SampleRecord, brdf: &Box<dyn BRDF>, scene: &Scene) -
 }
 ```
 
-## Estrutura de aceleração: BVH
+## Estrutura de aceleração: 
+
+![suzanne](images/suzanne_bvh.png)
 
 ## Gamma Correction
