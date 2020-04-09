@@ -5,6 +5,115 @@ use crate::sample;
 
 use std::f64::consts::PI;
 
+pub trait BRDF {
+    fn f(&self, input: &BRDFInput) -> Vector3<f64>;
+    fn p(&self, v: &Vector3<f64>) -> (Vector3<f64>, f64);
+    fn e(&self) -> Vector3<f64>;
+}
+
+pub struct BRDFInput<'a> {
+    pub n: &'a Vector3<f64>,
+    pub l: &'a Vector3<f64>,
+    pub v: &'a Vector3<f64>,
+}
+
+impl<'a> BRDFInput<'a> {
+    pub fn new(n: &'a Vector3<f64>, l: &'a Vector3<f64>, v: &'a Vector3<f64>) -> BRDFInput<'a> {
+        BRDFInput { n, l, v }
+    }
+}
+
+#[derive(Clone)]
+pub struct EmissiveBRDF {
+    pub color: Vector3<f64>,
+    pub power: f64,
+}
+
+impl BRDF for EmissiveBRDF {
+    fn f(&self, _: &BRDFInput) -> Vector3<f64> {
+        Vector3::zeros()
+    }
+    fn p(&self, _: &Vector3<f64>) -> (Vector3<f64>, f64) {
+        (Vector3::zeros(), 0.0)
+    }
+    fn e(&self) -> Vector3<f64> {
+        self.color * self.power
+    }
+}
+
+#[derive(Clone)]
+pub struct DiffuseBRDF {
+    pub color: Vector3<f64>,
+}
+
+impl BRDF for DiffuseBRDF {
+    fn f(&self, _: &BRDFInput) -> Vector3<f64> {
+        self.color
+    }
+
+    fn p(&self, _: &Vector3<f64>) -> (Vector3<f64>, f64) {
+        (sample::uniform_hemisphere(), 1.0 / 2.0 * PI)
+    }
+
+    fn e(&self) -> Vector3<f64> {
+        Vector3::zeros()
+    }
+}
+
+pub struct MirrorBRDF {
+    pub color: Vector3<f64>,
+}
+
+impl BRDF for MirrorBRDF {
+    fn f(&self, _: &BRDFInput) -> Vector3<f64> {
+        self.color
+    }
+
+    fn p(&self, v: &Vector3<f64>) -> (Vector3<f64>, f64) {
+        (sample::reflect_onb(&v), 1.0)
+    }
+
+    fn e(&self) -> Vector3<f64> {
+        Vector3::zeros()
+    }
+}
+
+#[derive(Clone)]
+pub struct MicrofacetBRDF {
+    pub albedo: Vector3<f64>,
+    pub f0: Vector3<f64>,
+    pub roughness: f64,
+    pub specular: f64,
+}
+
+impl BRDF for MicrofacetBRDF {
+    fn f(&self, input: &BRDFInput) -> Vector3<f64> {
+        let h = (input.l + input.v).normalize();
+
+        let num = ggx_ndf(self.roughness, &input.n, &h)
+            * ggx_g1(self.roughness, &input.n, &input.v)
+            * ggx_g1(self.roughness, &input.n, &input.l)
+            * fresnel_schlick(&self.f0, &input.n, &input.l);
+
+        let den = 4.0 * (input.n.dot(&input.l) * input.n.dot(&input.v));
+
+        let s = num / den;
+
+        (self.albedo / PI) + (s * self.specular)
+    }
+
+    fn p(&self, _: &Vector3<f64>) -> (Vector3<f64>, f64) {
+        (
+            sample::uniform_hemisphere(),
+            1.0 / 2.0 * std::f64::consts::PI,
+        )
+    }
+
+    fn e(&self) -> Vector3<f64> {
+        Vector3::zeros()
+    }
+}
+
 fn ggx_chi(a: f64) -> f64 {
     if a > 0.0 {
         1.0
@@ -35,97 +144,4 @@ fn fresnel_schlick(f0: &Vector3<f64>, n: &Vector3<f64>, l: &Vector3<f64>) -> Vec
         fresnel_schlick_scalar(f0[1], &n, &l),
         fresnel_schlick_scalar(f0[2], &n, &l),
     )
-}
-
-pub trait BRDF {
-    fn f(&self, input: &BRDFInput) -> Vector3<f64>;
-    fn p(&self) -> (Vector3<f64>, f64);
-    fn e(&self) -> Vector3<f64>;
-}
-
-pub struct BRDFInput<'a> {
-    pub n: &'a Vector3<f64>,
-    pub l: &'a Vector3<f64>,
-    pub v: &'a Vector3<f64>,
-}
-
-impl<'a> BRDFInput<'a> {
-    pub fn new(n: &'a Vector3<f64>, l: &'a Vector3<f64>, v: &'a Vector3<f64>) -> BRDFInput<'a> {
-        BRDFInput { n, l, v }
-    }
-}
-
-#[derive(Clone)]
-pub struct EmissiveBRDF {
-    pub color: Vector3<f64>,
-    pub power: f64,
-}
-
-impl BRDF for EmissiveBRDF {
-    fn f(&self, _: &BRDFInput) -> Vector3<f64> {
-        Vector3::zeros()
-    }
-    fn p(&self) -> (Vector3<f64>, f64) {
-        (Vector3::zeros(), 0.0)
-    }
-    fn e(&self) -> Vector3<f64> {
-        self.color * self.power
-    }
-}
-
-#[derive(Clone)]
-pub struct DiffuseBRDF {
-    pub color: Vector3<f64>,
-}
-
-impl BRDF for DiffuseBRDF {
-    fn f(&self, _: &BRDFInput) -> Vector3<f64> {
-        self.color
-    }
-
-    fn p(&self) -> (Vector3<f64>, f64) {
-        (sample::uniform_hemisphere(), 1.0 / 2.0 * PI)
-    }
-
-    fn e(&self) -> Vector3<f64> {
-        Vector3::zeros()
-    }
-}
-
-#[derive(Clone)]
-pub struct MicrofacetBRDF {
-    pub albedo: Vector3<f64>,
-    pub f0: Vector3<f64>,
-    pub roughness: f64,
-    pub specular: f64,
-}
-
-impl BRDF for MicrofacetBRDF {
-    fn f(&self, input: &BRDFInput) -> Vector3<f64> {
-        let h = (input.l + input.v).normalize();
-
-        let num = ggx_ndf(self.roughness, &input.n, &h)
-            * ggx_g1(self.roughness, &input.n, &input.v)
-            * ggx_g1(self.roughness, &input.n, &input.l)
-            * fresnel_schlick(&self.f0, &input.n, &input.l);
-
-        let den = 4.0 * (input.n.dot(&input.l) * input.n.dot(&input.v));
-
-        let s = num / den;
-
-        let d = input.n.dot(&input.l).max(0.0).min(1.0);
-
-        (self.albedo * d) + (s * self.specular)
-    }
-
-    fn p(&self) -> (Vector3<f64>, f64) {
-        (
-            sample::uniform_hemisphere(),
-            1.0 / 2.0 * std::f64::consts::PI,
-        )
-    }
-
-    fn e(&self) -> Vector3<f64> {
-        Vector3::zeros()
-    }
 }

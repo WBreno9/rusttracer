@@ -37,7 +37,51 @@ fn create_material(meta_data: &serde_json::Value, name: &str) -> Box<dyn BRDF> {
             );
 
             Box::new(DiffuseBRDF { color })
-        }
+        },
+
+        "mirror" => {
+            let color = Vector3::<f64>::new(
+                data["color"]["r"].as_f64().unwrap(),
+                data["color"]["g"].as_f64().unwrap(),
+                data["color"]["b"].as_f64().unwrap(),
+            );
+
+            Box::new(MirrorBRDF { color })
+        },
+
+        "emissive" => {
+            let color = Vector3::<f64>::new(
+                data["color"]["r"].as_f64().unwrap(),
+                data["color"]["g"].as_f64().unwrap(),
+                data["color"]["b"].as_f64().unwrap(),
+            );
+
+            let power = data["power"].as_f64().unwrap();
+
+            Box::new(EmissiveBRDF { color, power })
+        },
+
+        "microfacet" => {
+            let albedo = Vector3::<f64>::new(
+                data["albedo"]["r"].as_f64().unwrap(),
+                data["albedo"]["g"].as_f64().unwrap(),
+                data["albedo"]["b"].as_f64().unwrap(),
+            );
+
+            let f0 = Vector3::<f64>::new(
+                data["f0"]["r"].as_f64().unwrap(),
+                data["f0"]["g"].as_f64().unwrap(),
+                data["f0"]["b"].as_f64().unwrap(),
+            );
+
+            let roughness = data["roughness"].as_f64().unwrap();
+
+            let specular = data["specular"].as_f64().unwrap();
+
+            Box::new(MicrofacetBRDF { albedo, f0, roughness, specular })
+        },
+
+
         _ => Box::new(DiffuseBRDF {
             color: Vector3::repeat(1.0),
         }),

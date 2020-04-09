@@ -95,7 +95,7 @@ fn radiance(depth: i32, mut ray: Ray, scene: &Scene) -> Vector3<f64> {
         if let Some(record) = scene.obj.intersect(&ray) {
             let s = sample::SampleRecord::new(&ray, &record);
 
-            let (l, pdf) = record.brdf.p();
+            let (l, pdf) = record.brdf.p(&s.v);
             let e = record.brdf.e();
 
             let f = record.brdf.f(&BRDFInput {
@@ -120,52 +120,51 @@ fn radiance(depth: i32, mut ray: Ray, scene: &Scene) -> Vector3<f64> {
 }
 
 fn main() {
-    let width = 768;
+    let width = 512;
     let height = width;
 
     let mut im = image::RgbImage::new(width, height);
     let (im_width, im_height) = im.dimensions();
 
     let camera = Camera::new(
-        // &Vector3::new(0.000000001, 1.2891, 5.873).into(),
-        &Vector3::new(1.000000001, 2.0000001, 5.873).into(),
-        &-(Vector3::new(1.000000001, 2.0000001, 5.873) - Vector3::new(0.0, 0.6, 0.0)).normalize(),
+        &Vector3::new(0.000000001, 1.2891, 5.873).into(),
+        &-(Vector3::new(0.000000001, 1.2891, 5.873) - Vector3::new(0.0, 1.2891, 0.0)).normalize(),
         Vector2::<u32>::new(width, height),
         33.3,
     );
 
-    // let scene = Scene {
-    //     obj: Box::new(mesh::load_model_bvh("tests/random_tri.obj").unwrap()),
-    //     lights: vec![
-    //         Box::new(DiskLight {
-    //             pos: Point3::<f64>::new(0.0, 4.0, 0.0),
-    //             color: Vector3::<f64>::new(1.0, 1.0, 1.0),
-    //             power: 10.0,
-    //             radius: 1.0,
-    //             normal: (Point3::origin() - Point3::<f64>::new(0.0, 4.0, 0.0)).normalize(),
-    //         }),
-    //         Box::new(DiskLight {
-    //             pos: Point3::<f64>::new(0.0, 1.0, 4.0),
-    //             color: Vector3::<f64>::new(1.0, 1.0, 1.0),
-    //             power: 0.6,
-    //             radius: 0.5,
-    //             normal: (Point3::origin() - Point3::<f64>::new(0.0, 1.0, 4.0)).normalize(),
-    //         }),
-    //     ],
-    // };
+    let scene = Scene {
+        obj: Box::new(mesh::load_model_bvh("tests/roots.obj").unwrap()),
+        lights: vec![
+            Box::new(DiskLight {
+                pos: Point3::<f64>::new(0.0, 4.0, 0.0),
+                color: Vector3::<f64>::new(1.0, 1.0, 1.0),
+                power: 10.0,
+                radius: 1.0,
+                normal: (Point3::origin() - Point3::<f64>::new(0.0, 4.0, 0.0)).normalize(),
+            }),
+            Box::new(DiskLight {
+                pos: Point3::<f64>::new(0.0, 1.0, 4.0),
+                color: Vector3::<f64>::new(1.0, 1.0, 1.0),
+                power: 1.6,
+                radius: 0.5,
+                normal: (Point3::origin() - Point3::<f64>::new(0.0, 1.0, 4.0)).normalize(),
+            }),
+        ],
+    };
 
-    let spp = 1;
+    let spp = 256;
 
-    let model = mesh::load_model("tests/sofa3.obj").unwrap();
+    // let model = mesh::load_model("tests/sofa3.obj").unwrap();
 
     use indicatif::{ProgressBar, ProgressStyle};
 
-    // let pb = ProgressBar::new((im_width * im_height) as u64);
-    // pb.set_style(
-    //     ProgressStyle::default_bar()
-    //         .template("{spinner:.green} [{elapsed}] [{bar:40.cyan/blue}] {msg:.blue} ({eta:.red})")
-    //         .progress_chars("=> "),
-    // );
+    let pb = ProgressBar::new((im_width * im_height) as u64);
+    pb.set_style(
+        ProgressStyle::default_bar()
+            .template("{spinner:.green} [{elapsed}] [{bar:40.cyan/blue}] {msg:.blue} ({eta:.red})")
+            .progress_chars("=> "),
+    );
 
     let w_string_len = width.to_string().len();
     let h_string_len = height.to_string().len();
@@ -176,38 +175,33 @@ fn main() {
         for j in 0..im_height {
             let mut c = Vector3::<f64>::repeat(0.0);
 
-            // for _ in 0..spp {
-            //     let ray = camera.get_ray(i, j);
-            //     c += radiance(1, ray, &scene);
-            // }
-            // c /= spp as f64;
-
-            let ray = camera.get_ray(i, j);
-            if let Some(record) = model.intersect(&ray) {
-                c += Vector3::repeat(record.t / 10.0);
+            for _ in 0..spp {
+                let ray = camera.get_ray(i, j);
+                c += radiance(1, ray, &scene);
             }
+            c /= spp as f64;
 
             let pixel = im.get_pixel_mut(i, j);
 
-            pixel[0] = (c[0].powf(1.0).min(1.0) * 255.0) as u8;
-            pixel[1] = (c[1].powf(1.0).min(1.0) * 255.0) as u8;
-            pixel[2] = (c[2].powf(1.0).min(1.0) * 255.0) as u8;
+            pixel[0] = (c[0].powf(1.0/2.0).min(1.0) * 255.0) as u8;
+            pixel[1] = (c[1].powf(1.0/2.0).min(1.0) * 255.0) as u8;
+            pixel[2] = (c[2].powf(1.0/2.0).min(1.0) * 255.0) as u8;
 
-            // pb.set_message(&format!(
-            //     "W:[{:w$}, {}] H:[{:h$}, {}]",
-            //     i,
-            //     im_width,
-            //     j,
-            //     im_height,
-            //     w = w_string_len,
-            //     h = h_string_len
-            // ));
-            // pb.inc(1);
+            pb.set_message(&format!(
+                "W:[{:w$}, {}] H:[{:h$}, {}]",
+                i,
+                im_width,
+                j,
+                im_height,
+                w = w_string_len,
+                h = h_string_len
+            ));
+            pb.inc(1);
         }
     }
 
     println!(" ");
     println!("Execution time: {:?}", start.elapsed());
 
-    im.save("output.png").unwrap();
+    im.save("output2.png").unwrap();
 }
