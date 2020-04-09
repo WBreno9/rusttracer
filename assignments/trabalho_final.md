@@ -2,9 +2,7 @@
 
 ## Microfacet BRDF
 
-$$
-  f_{spec} = \frac{F(h,l)G_{2}(l,v,h)D(h)}{4|n \cdot l||n \cdot v|}
-$$
+<img src="https://render.githubusercontent.com/render/math?math=\LARGE f_{spec} = \frac{F(h,l)G_{2}(l,v,h)D(h)}{4|n \cdot l||n \cdot v|}">
 
 ```rust
 fn f(&self, input: &BRDFInput) -> Vector3<f64> {
@@ -23,6 +21,9 @@ fn f(&self, input: &BRDFInput) -> Vector3<f64> {
     }
 ```
 
+<img src="https://render.githubusercontent.com/render/math?math=\Large D(m) = \frac{\chi^%2B(n \cdot m)\alpha^2}{\pi(1 %2B (n \cdot m)^2(\alpha^2 - 1))^2}">
+
+
 ```rust
 fn ggx_ndf(alpha: f64, n: &Vector3<f64>, m: &Vector3<f64>) -> f64 {
     let alpha2 = alpha * alpha;
@@ -32,6 +33,12 @@ fn ggx_ndf(alpha: f64, n: &Vector3<f64>, m: &Vector3<f64>) -> f64 {
 }
 ```
 
+<img src="https://render.githubusercontent.com/render/math?math=\Large G_{1}(s) \approx \frac{2(n \cdot s)}{(n \cdot s)(2-\alpha)+\alpha}">
+
+<br><br>
+
+<img src="https://render.githubusercontent.com/render/math?math=\Large G_{2} = G_{1}(\alpha,n,v)G_{1}(\alpha,n,l)">
+
 ```rust
 fn ggx_g1(alpha: f64, n: &Vector3<f64>, s: &Vector3<f64>) -> f64 {
     let dot = n.dot(&s);
@@ -39,7 +46,7 @@ fn ggx_g1(alpha: f64, n: &Vector3<f64>, s: &Vector3<f64>) -> f64 {
 }
 ```
 
-
+<img src="https://render.githubusercontent.com/render/math?math=\Large F(n,l) \approx F_{0} %2B (1 - F_{0})(1-(n \cdot l)^%2B)^5">
 
 ```rust
 fn fresnel_schlick_scalar(f0: f64, n: &Vector3<f64>, l: &Vector3<f64>) -> f64 {
@@ -57,9 +64,7 @@ fn fresnel_schlick(f0: &Vector3<f64>, n: &Vector3<f64>, l: &Vector3<f64>) -> Vec
 
 ## Amostragem Explicita da Luz
 
-$$
-  L(x, \omega_{o}) = \int_{x' \in R} g(x, x')f(x, \omega_{i}, \omega_{o})L_{e}(x', \omega_{i})\cos\theta \frac{\cos\theta'}{p(x')\|x' - x\|^2}
-$$
+<img src="https://render.githubusercontent.com/render/math?math=\LARGE L(x, \omega_{o}) = \int_{x' \in R} g(x, x')f(x, \omega_{i}, \omega_{o})L_{e}(x', \omega_{i})\cos\theta \frac{\cos\theta'}{p(x')\|x' - x\|^2}">
 
 ```rust
 fn direct_light(s: &sample::SampleRecord, brdf: &Box<dyn BRDF>, scene: &Scene) -> Vector3<f64> {
