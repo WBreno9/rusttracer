@@ -9,4 +9,4 @@ test*
 *.py
 *.obj
 *.json
-*.png
+output*
