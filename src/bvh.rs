@@ -92,11 +92,11 @@ impl Node {
                 let mut res: Vector3<f64> = Vector3::repeat(0.0);
 
                 if node.left_bounds.intersect(&ray) {
-                    res += Vector3::new(0.0, 0.0, 0.0001) + node.left.intersect_debug(&ray);
+                    res += Vector3::new(0.0, 0.0, 0.01) + node.left.intersect_debug(&ray);
                 };
 
                 if node.right_bounds.intersect(&ray) {
-                    res += Vector3::new(0.0, 0.0, 0.0001) + node.right.intersect_debug(&ray);
+                    res += Vector3::new(0.0, 0.0, 0.01) + node.right.intersect_debug(&ray);
                 };
 
                 res
@@ -182,7 +182,7 @@ fn triangle_bounds(tri: &Triangle) -> Bounds {
                 .pos
                 .z
                 .max(tri.vert[1].pos.z.max(tri.vert[2].pos.z)),
-        ) + Vector3::repeat(0.000001),
+        ) + Vector3::repeat(0.00000001),
         min: Vector3::new(
             tri.vert[0]
                 .pos
@@ -196,7 +196,7 @@ fn triangle_bounds(tri: &Triangle) -> Bounds {
                 .pos
                 .z
                 .min(tri.vert[1].pos.z.min(tri.vert[2].pos.z)),
-        ) - Vector3::repeat(0.000001),
+        ) - Vector3::repeat(0.00000001),
     }
 }
 
@@ -237,15 +237,15 @@ fn build_refs(mesh: AggregatePrimitive<Triangle>) -> Vec<TriangleRef> {
 
 fn sort_refs(refs: &mut [TriangleRef], axis: SortAxis) {
     refs.sort_unstable_by(|a, b| {
-        let c0 = (a.bounds.max - a.bounds.min) / 2.0;
-        let c1 = (b.bounds.max - b.bounds.min) / 2.0;
+        let c0 = (a.bounds.max + a.bounds.min) / 2.0;
+        let c1 = (b.bounds.max + b.bounds.min) / 2.0;
 
         c0[axis as usize].partial_cmp(&c1[axis as usize]).unwrap()
     });
 }
 
 fn build_node<'a>(mut refs: Vec<TriangleRef>) -> Node {
-    if refs.len() <= 5 {
+    if refs.len() <= 3 {
         return Node::Leaf(LeafNode { refs });
     }
 
@@ -260,7 +260,7 @@ fn build_node<'a>(mut refs: Vec<TriangleRef>) -> Node {
         SortAxis::Z
     };
 
-    sort_refs(&mut refs[..], sort_axis);
+    sort_refs(&mut refs[..],  sort_axis);
 
     let middle = (refs.len() as f64 / 2.0).floor() as usize;
 

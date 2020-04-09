@@ -47,7 +47,7 @@ use rand::random;
 impl Scene {
     fn get_light(&self) -> &Box<dyn Light> {
         let i = (random::<f64>() * self.lights.len() as f64).floor() as usize;
-        &self.lights[i]
+        &self.lights[0]
     }
 }
 
@@ -112,7 +112,7 @@ fn radiance(depth: i32, mut ray: Ray, scene: &Scene) -> Vector3<f64> {
             };
 
             color += (e + lc).component_mul(&b);
-            b = b.component_mul(&(f * pdf * s.n.dot(&l)));
+            b = b.component_mul(&((f / pdf) * s.n.dot(&l)));
         }
     }
 
@@ -126,43 +126,41 @@ fn main() {
     let mut im = image::RgbImage::new(width, height);
     let (im_width, im_height) = im.dimensions();
 
+    let camera = Camera::new(
+        &Vector3::new(0.000000001, 1.2891, 5.873).into(),
+        &-(Vector3::new(0.000000001, 1.2891, 5.873) - Vector3::new(0.0, 1.2891, 0.0)).normalize(),
+        Vector2::<u32>::new(width, height),
+        45.0,
+    );
+
     // let camera = Camera::new(
-    //     &Vector3::new(0.000000001, 1.2891, 5.873).into(),
-    //     &-(Vector3::new(0.000000001, 1.2891, 5.873) - Vector3::new(0.0, 1.2891, 0.0)).normalize(),
+    //     &Vector3::new(0.000000001, 0.000000001, 7.0001).into(),
+    //     &-Vector3::new(0.000000001, 0.000000001, 7.0001).normalize(),
     //     Vector2::<u32>::new(width, height),
     //     33.3,
     // );
 
-    let camera = Camera::new(
-        &Vector3::new(0.000000001, 0.000000001, 5.873).into(),
-        &Vector3::new(0.0, 0.0, -1.0),
-        Vector2::<u32>::new(width, height),
-        33.3,
-    );
-
     let scene = Scene {
-        obj: Box::new(mesh::load_model_bvh("tests/suzanne.obj").unwrap()),
+        obj: Box::new(mesh::load_model_bvh("tests/roots.obj").unwrap()),
         lights: vec![
             Box::new(DiskLight {
-                pos: Point3::<f64>::new(0.0, 4.0, 0.0),
+                pos: Point3::<f64>::new(0.0, 3.0, 0.0),
                 color: Vector3::<f64>::new(1.0, 1.0, 1.0),
-                power: 10.0,
-                radius: 1.0,
+                power: 1.0,
+                radius: 0.6,
                 normal: (Point3::origin() - Point3::<f64>::new(0.0, 4.0, 0.0)).normalize(),
             }),
-            Box::new(DiskLight {
-                pos: Point3::<f64>::new(0.0, 1.0, 4.0),
-                color: Vector3::<f64>::new(1.0, 1.0, 1.0),
-                power: 1.6,
-                radius: 0.5,
-                normal: (Point3::origin() - Point3::<f64>::new(0.0, 1.0, 4.0)).normalize(),
-            }),
+            // Box::new(DiskLight {
+            //     pos: Point3::<f64>::new(0.0, 1.0, 4.0),
+            //     color: Vector3::<f64>::new(1.0, 1.0, 1.0),
+            //     power: 1.6,
+            //     radius: 0.5,
+            //     normal: (Point3::origin() - Point3::<f64>::new(0.0, 1.0, 4.0)).normalize(),
+            // }),
         ],
     };
 
-    let spp = 256;
-
-    let model = mesh::load_model_bvh_debug("tests/suzanne.obj").unwrap();
+    let spp = 32;
 
     use indicatif::{ProgressBar, ProgressStyle};
 
@@ -182,16 +180,16 @@ fn main() {
         for j in 0..im_height {
             let mut c = Vector3::<f64>::repeat(0.0);
 
-            // for _ in 0..spp {
-            //     let ray = camera.get_ray(i, j);
-            //     c += radiance(1, ray, &scene);
-            // }
-            // c /= spp as f64;
-
-            let ray = camera.get_ray(i, j);
-            for mesh in model.iter() {
-                c += mesh.primitive.debug(&ray)
+            for _ in 0..spp {
+                let ray = camera.get_ray(i, j);
+                c += radiance(3, ray, &scene);
             }
+            c /= spp as f64;
+
+            // let ray = camera.get_ray(i, j);
+            // for mesh in model.iter() {
+            //     c += mesh.primitive.debug(&ray)
+            // }
 
             let pixel = im.get_pixel_mut(i, j);
 
@@ -215,5 +213,5 @@ fn main() {
     println!(" ");
     println!("Execution time: {:?}", start.elapsed());
 
-    im.save("output2.png").unwrap();
+    im.save("output.png").unwrap();
 }

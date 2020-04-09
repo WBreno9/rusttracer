@@ -111,4 +111,8 @@ fn direct_light(s: &sample::SampleRecord, brdf: &Box<dyn BRDF>, scene: &Scene) -
 
 ![suzanne](images/suzanne_bvh.png)
 
+![suzanne](images/random_tri_bvh.png)
+
+![suzanne](images/roots_bvh.png)
+
 ## Gamma Correction
