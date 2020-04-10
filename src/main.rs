@@ -120,15 +120,15 @@ fn radiance(depth: i32, mut ray: Ray, scene: &Scene) -> Vector3<f64> {
 }
 
 fn main() {
-    let width = 512;
-    let height = width;
+    let width = 800;
+    let height = 600;
 
     let mut im = image::RgbImage::new(width, height);
     let (im_width, im_height) = im.dimensions();
 
     let camera = Camera::new(
         &Vector3::new(0.000000001, 3.2891, 6.673).into(),
-        &-(Vector3::new(0.000000001, 3.2891, 6.673) - Vector3::new(0.0, 1.2891, 1.8)).normalize(),
+        &-(Vector3::new(0.000000001, 3.2891, 6.673) - Vector3::new(0.0, 0.87, 1.8)).normalize(),
         Vector2::<u32>::new(width, height),
         45.0,
     );

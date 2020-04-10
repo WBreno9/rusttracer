@@ -1,6 +1,8 @@
 # Trabalho Final
 
-![roots](images/roots_4h_256spp.png)
+![final_256spp_1hr](images/final_256spp_1hr.png)
+
+800x600 - 156,083tri - 256spp - 1hr
 
 ## Amostragem Explícita da Luz
 
